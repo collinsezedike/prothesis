@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::{
+    constants::{DAO_CONFIG_SEED, PROPOSAL_SEED},
     error::ProthesisError,
     state::{DAOConfig, Proposal, ProposalStatus},
 };
@@ -12,7 +13,7 @@ pub struct SubmitProposal<'info> {
     pub author: Signer<'info>,
 
     #[account(
-        seeds = [b"dao", dao_config.id.to_le_bytes().as_ref()],
+        seeds = [DAO_CONFIG_SEED, dao_config.id.to_le_bytes().as_ref()],
         bump = dao_config.bump,
     )]
     pub dao_config: Account<'info, DAOConfig>,
@@ -20,7 +21,7 @@ pub struct SubmitProposal<'info> {
     #[account(
         init,
         payer = author,
-        seeds = [b"proposal", title.as_bytes().as_ref(), dao_config.key().as_ref()],
+        seeds = [PROPOSAL_SEED, title.as_bytes().as_ref(), dao_config.key().as_ref()],
         bump,
         space = Proposal::SPACE
     )]

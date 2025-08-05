@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
 
+use crate::constants::{MAX_CONTENT_LENGTH, MAX_TITLE_LENGTH};
+
 /// Enum representing the status of a proposal
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace, PartialEq, Eq)]
 pub enum ProposalStatus {
@@ -20,10 +22,10 @@ pub struct Proposal {
     /// Author of the proposal
     pub author: Pubkey,
     /// Title of the proposal (max 64 chars)
-    #[max_len(64)]
+    #[max_len(MAX_TITLE_LENGTH)]
     pub title: String,
     /// Content of the proposal (max 2048 chars)
-    #[max_len(2048)]
+    #[max_len(MAX_CONTENT_LENGTH)]
     pub content: String,
     /// Number of upvotes received
     pub upvotes: u32,

@@ -1,8 +1,9 @@
 use anchor_lang::prelude::*;
 
 use crate::{
+    constants::{ DAO_CONFIG_SEED, PROPOSAL_SEED, VOTE_SEED },
     error::ProthesisError,
-    state::{DAOConfig, Proposal, Vote, VoteType},
+    state::{ DAOConfig, Proposal, Vote, VoteType },
 };
 
 #[derive(Accounts)]
@@ -12,14 +13,14 @@ pub struct VoteOnProposal<'info> {
     pub voter: Signer<'info>,
 
     #[account(
-        seeds = [b"dao", dao_config.id.to_le_bytes().as_ref()],
+        seeds = [DAO_CONFIG_SEED, dao_config.id.to_le_bytes().as_ref()],
         bump = dao_config.bump,
     )]
     pub dao_config: Account<'info, DAOConfig>,
 
     #[account(
         mut,
-        seeds = [b"proposal", proposal.title.as_bytes().as_ref(), dao_config.key().as_ref()],
+        seeds = [PROPOSAL_SEED, proposal.title.as_bytes().as_ref(), dao_config.key().as_ref()],
         bump = proposal.bump,
     )]
     pub proposal: Account<'info, Proposal>,
@@ -27,7 +28,7 @@ pub struct VoteOnProposal<'info> {
     #[account(
         init,
         payer = voter,
-        seeds = [b"vote", voter.key().as_ref(), proposal.key().as_ref()],
+        seeds = [VOTE_SEED, voter.key().as_ref(), proposal.key().as_ref()],
         bump,
         space = Vote::SPACE
     )]

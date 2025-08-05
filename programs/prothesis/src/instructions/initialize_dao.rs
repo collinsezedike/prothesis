@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::state::DAOConfig;
+use crate::{constants::DAO_CONFIG_SEED, state::DAOConfig};
 
 #[derive(Accounts)]
 #[instruction(id: u64)]
@@ -11,7 +11,7 @@ pub struct InitializeDAO<'info> {
     #[account(
         init,
         payer = creator,
-        seeds = [b"dao", id.to_le_bytes().as_ref()],
+        seeds = [DAO_CONFIG_SEED, id.to_le_bytes().as_ref()],
         bump,
         space = DAOConfig::SPACE
     )]
