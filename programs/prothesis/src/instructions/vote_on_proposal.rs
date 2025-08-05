@@ -18,6 +18,7 @@ pub struct VoteOnProposal<'info> {
     pub dao_config: Account<'info, DAOConfig>,
 
     #[account(
+        mut,
         seeds = [b"proposal", proposal.title.as_bytes().as_ref(), dao_config.key().as_ref()],
         bump = proposal.bump,
     )]
