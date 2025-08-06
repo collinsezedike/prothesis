@@ -52,4 +52,8 @@ pub mod prothesis {
     pub fn vote_on_proposal(ctx: Context<VoteOnProposal>, vote: u8) -> Result<()> {
         ctx.accounts.vote_on_proposal(vote)
     }
+
+    pub fn resolve_proposal(ctx: Context<ResolveProposal>) -> Result<()> {
+        ctx.accounts.resolve_proposal()
+    }
 }

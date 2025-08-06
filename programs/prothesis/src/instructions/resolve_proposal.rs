@@ -8,7 +8,7 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct ResolveProposal<'info> {
-    // Anybody can resolve the proposal, not just the author
+    // Anybody can resolve the proposal, not just the author or council members
     #[account(mut)]
     pub resolver: Signer<'info>,
 
