@@ -1,9 +1,9 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::{DAO_CONFIG_SEED, PROPOSAL_SEED},
+    constants::{DAO_CONFIG_SEED, MEMBER_SEED, PROPOSAL_SEED},
     error::ProthesisError,
-    state::{DAOConfig, Proposal, ProposalStatus},
+    state::{DAOConfig, Member, Proposal, ProposalStatus},
 };
 
 #[derive(Accounts)]
@@ -17,6 +17,12 @@ pub struct SubmitProposal<'info> {
         bump = dao_config.bump,
     )]
     pub dao_config: Account<'info, DAOConfig>,
+
+    #[account(
+        seeds = [MEMBER_SEED, author.key().as_ref(), dao_config.key().as_ref()], 
+        bump = member.bump
+    )]
+    pub member: Account<'info, Member>,
 
     #[account(
         init,
@@ -41,7 +47,7 @@ impl<'info> SubmitProposal<'info> {
         require!(content.len() <= 2048, ProthesisError::ContentTooLong);
 
         self.proposal.set_inner(Proposal {
-            author: self.author.key(),
+            author: self.member.key(),
             title,
             content,
             upvotes: 0,

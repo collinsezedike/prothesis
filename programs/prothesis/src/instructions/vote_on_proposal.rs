@@ -1,9 +1,9 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::{DAO_CONFIG_SEED, PROPOSAL_SEED, VOTE_SEED},
+    constants::{DAO_CONFIG_SEED, MEMBER_SEED, PROPOSAL_SEED, VOTE_SEED},
     error::ProthesisError,
-    state::{DAOConfig, Proposal, ProposalStatus, Vote, VoteType},
+    state::{DAOConfig, Member, Proposal, ProposalStatus, Vote, VoteType},
 };
 
 #[derive(Accounts)]
@@ -25,9 +25,15 @@ pub struct VoteOnProposal<'info> {
     pub proposal: Account<'info, Proposal>,
 
     #[account(
+        seeds = [MEMBER_SEED, voter.key().as_ref(), dao_config.key().as_ref()], 
+        bump = member.bump
+    )]
+    pub member: Account<'info, Member>,
+
+    #[account(
         init,
         payer = voter,
-        seeds = [VOTE_SEED, voter.key().as_ref(), proposal.key().as_ref()],
+        seeds = [VOTE_SEED, member.key().as_ref(), proposal.key().as_ref()],
         bump,
         space = Vote::SPACE
     )]
