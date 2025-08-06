@@ -7,7 +7,6 @@ use crate::{
 };
 
 #[derive(Accounts)]
-#[instruction(title: String)]
 pub struct VoteOnProposal<'info> {
     #[account(mut)]
     pub voter: Signer<'info>,
