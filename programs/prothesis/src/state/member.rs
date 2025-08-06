@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-/// Member account - stores the user joined 
+/// Member account - stores the user joined
 #[account]
 #[derive(InitSpace)]
 pub struct Member {

@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::{constants::{DAO_CONFIG_SEED, MEMBER_SEED}, state::{DAOConfig, Member}};
+use crate::{
+    constants::{DAO_CONFIG_SEED, MEMBER_SEED},
+    state::{DAOConfig, Member},
+};
 
 #[derive(Accounts)]
 pub struct AddMember<'info> {
@@ -17,7 +20,7 @@ pub struct AddMember<'info> {
     #[account(
         init,
         payer = aspirant,
-        seeds = [MEMBER_SEED, aspirant.key().as_ref(), dao_config.key().as_ref()], 
+        seeds = [MEMBER_SEED, aspirant.key().as_ref(), dao_config.key().as_ref()],
         bump,
         space = Member::SPACE
     )]
@@ -28,9 +31,9 @@ pub struct AddMember<'info> {
 
 impl<'info> AddMember<'info> {
     pub fn add_member(&mut self, bumps: &AddMemberBumps) -> Result<()> {
-        self.member.set_inner( Member {
+        self.member.set_inner(Member {
             joined_at: Clock::get()?.unix_timestamp,
-            bump: bumps.member
+            bump: bumps.member,
         });
 
         self.dao_config.members_count += 1;

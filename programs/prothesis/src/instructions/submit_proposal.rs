@@ -19,7 +19,7 @@ pub struct SubmitProposal<'info> {
     pub dao_config: Account<'info, DAOConfig>,
 
     #[account(
-        seeds = [MEMBER_SEED, author.key().as_ref(), dao_config.key().as_ref()], 
+        seeds = [MEMBER_SEED, author.key().as_ref(), dao_config.key().as_ref()],
         bump = member.bump
     )]
     pub member: Account<'info, Member>,

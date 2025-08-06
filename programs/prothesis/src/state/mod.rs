@@ -4,6 +4,6 @@ pub mod proposal;
 pub mod vote;
 
 pub use dao_config::*;
-pub use member::*; 
+pub use member::*;
 pub use proposal::*;
 pub use vote::*;

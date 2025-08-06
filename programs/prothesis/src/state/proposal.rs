@@ -28,9 +28,9 @@ pub struct Proposal {
     #[max_len(MAX_CONTENT_LENGTH)]
     pub content: String,
     /// Number of upvotes received
-    pub upvotes: u32,
+    pub upvotes: u64,
     /// Number of downvotes received
-    pub downvotes: u32,
+    pub downvotes: u64,
     /// Unix timestamp when the proposal was created
     pub created_at: i64,
     /// Current status of the proposal

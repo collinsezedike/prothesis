@@ -25,7 +25,7 @@ pub struct VoteOnProposal<'info> {
     pub proposal: Account<'info, Proposal>,
 
     #[account(
-        seeds = [MEMBER_SEED, voter.key().as_ref(), dao_config.key().as_ref()], 
+        seeds = [MEMBER_SEED, voter.key().as_ref(), dao_config.key().as_ref()],
         bump = member.bump
     )]
     pub member: Account<'info, Member>,

@@ -1,6 +1,12 @@
-use anchor_lang::{prelude::*, system_program::{ transfer, Transfer }};
+use anchor_lang::{
+    prelude::*,
+    system_program::{transfer, Transfer},
+};
 
-use crate::{constants::{DAO_CONFIG_SEED, TREASURY_SEED}, state::DAOConfig, };
+use crate::{
+    constants::{DAO_CONFIG_SEED, TREASURY_SEED},
+    state::DAOConfig,
+};
 
 #[derive(Accounts)]
 pub struct FundDAO<'info> {
@@ -15,7 +21,7 @@ pub struct FundDAO<'info> {
 
     #[account(
         mut,
-        seeds = [TREASURY_SEED, dao_config.key().as_ref()], 
+        seeds = [TREASURY_SEED, dao_config.key().as_ref()],
         bump = dao_config.treasury_bump
     )]
     pub treasury: SystemAccount<'info>,
@@ -25,7 +31,6 @@ pub struct FundDAO<'info> {
 
 impl<'info> FundDAO<'info> {
     pub fn fund_dao(&mut self, amount: u64) -> Result<()> {
-
         let cpi_program = self.system_program.to_account_info();
 
         let cpi_accounts = Transfer {

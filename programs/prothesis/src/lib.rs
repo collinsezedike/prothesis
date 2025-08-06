@@ -40,7 +40,7 @@ pub mod prothesis {
     pub fn add_member(ctx: Context<AddMember>) -> Result<()> {
         ctx.accounts.add_member(&ctx.bumps)
     }
-    
+
     pub fn submit_proposal(
         ctx: Context<SubmitProposal>,
         title: String,
