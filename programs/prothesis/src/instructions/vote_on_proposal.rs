@@ -37,12 +37,12 @@ pub struct VoteOnProposal<'info> {
 }
 
 impl<'info> VoteOnProposal<'info> {
-    require!(
+    pub fn vote_on_proposal(&mut self, vote: u8) -> Result<()> {
+            require!(
         self.proposal.status == ProposalStatus::Pending,
         ProthesisError::ProposalNotPending
     );
-
-    pub fn vote_on_proposal(&mut self, vote: u8) -> Result<()> {
+    
         self.vote.vote_type = match vote {
             0 => VoteType::Downvote,
             1 => VoteType::Upvote,
