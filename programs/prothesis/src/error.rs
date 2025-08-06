@@ -3,9 +3,9 @@ use anchor_lang::prelude::*;
 /// Error codes for the Prothesis DAO program
 #[error_code]
 pub enum ProthesisError {
-    /// Returned when a non-authority tries to perform an admin action
-    #[msg("Only the DAO authority can perform this action")]
-    InvalidAuthority,
+    /// Returned when a member is not a council member
+    #[msg("Not a council member")]
+    NotCouncilMember,
 
     /// Returned when proposal title exceeds the maximum length
     #[msg("Proposal title exceeds maximum length")]
@@ -19,9 +19,13 @@ pub enum ProthesisError {
     #[msg("Voting is only allowed on pending proposals")]
     ProposalNotPending,
 
-    /// Returned when trying to resolve a proposal that has previously been resolved
-    #[msg("Proposal has already been resolved")]
-    ProposalAlreadyResolved,
+    /// Returned when trying to review a proposal or promotion that has previously been reviewed
+    #[msg("This has already been reviewed")]
+    AlreadyReviewed,
+
+    /// Returned when trying to resolve a proposal or promotion that has not been reviewed
+    #[msg("This cannot be resolved until it has been reviewed.")]
+    CannotResolveBeforeReview,
 
     /// Returned when the specified vote is neither 0 nor 1
     #[msg("Invalid vote type: A vote must be either 1 for upvote or 0 for downvote")]

@@ -4,6 +4,8 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(InitSpace)]
 pub struct Member {
+    /// Council member or not - 0 = false, 1 = true
+    pub is_council: u8,
     /// Time the member joined
     pub joined_at: i64,
     /// PDA bump

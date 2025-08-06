@@ -1,13 +1,23 @@
 pub mod add_member;
 pub mod fund_dao;
 pub mod initialize_dao;
+pub mod initiate_promotion;
+pub mod resolve_promotion;
 pub mod resolve_proposal;
+pub mod review_promotion;
+pub mod review_proposal;
 pub mod submit_proposal;
+pub mod vote_on_promotion;
 pub mod vote_on_proposal;
 
 pub use add_member::*;
 pub use fund_dao::*;
 pub use initialize_dao::*;
+pub use initiate_promotion::*;
+pub use resolve_promotion::*;
 pub use resolve_proposal::*;
+pub use review_promotion::*;
+pub use review_proposal::*;
 pub use submit_proposal::*;
+pub use vote_on_promotion::*;
 pub use vote_on_proposal::*;

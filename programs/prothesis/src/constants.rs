@@ -4,6 +4,9 @@ pub const DAO_CONFIG_SEED: &[u8] = b"dao";
 /// Seed prefix for the DAO treasury
 pub const TREASURY_SEED: &[u8] = b"treasury";
 
+/// Seed prefix for council promotion PDA
+pub const PROMOTION_SEED: &[u8] = b"promotion";
+
 /// Seed prefix for member PDA
 pub const MEMBER_SEED: &[u8] = b"member";
 

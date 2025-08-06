@@ -2,11 +2,15 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::{DAO_CONFIG_SEED, MEMBER_SEED},
+    error::ProthesisError,
     state::{DAOConfig, Member},
 };
 
 #[derive(Accounts)]
 pub struct AddMember<'info> {
+    #[account(mut)]
+    pub council_signer: Signer<'info>,
+
     #[account(mut)]
     pub aspirant: Signer<'info>,
 
@@ -24,16 +28,24 @@ pub struct AddMember<'info> {
         bump,
         space = Member::SPACE
     )]
-    pub member: Account<'info, Member>,
+    pub new_member: Account<'info, Member>,
+
+    #[account(
+        seeds = [MEMBER_SEED, council_signer.key().as_ref(), dao_config.key().as_ref()],
+        bump = council_member.bump,
+        constraint = council_member.is_council == 1 @ ProthesisError::NotCouncilMember
+    )]
+    pub council_member: Account<'info, Member>,
 
     pub system_program: Program<'info, System>,
 }
 
 impl<'info> AddMember<'info> {
     pub fn add_member(&mut self, bumps: &AddMemberBumps) -> Result<()> {
-        self.member.set_inner(Member {
+        self.new_member.set_inner(Member {
+            is_council: 0, // Not a council member
             joined_at: Clock::get()?.unix_timestamp,
-            bump: bumps.member,
+            bump: bumps.new_member,
         });
 
         self.dao_config.members_count += 1;

@@ -6,16 +6,14 @@ use anchor_lang::prelude::*;
 pub struct DAOConfig {
     /// DAO id differentiator
     pub id: u64,
-    /// The authority that can update DAO parameters
-    pub authority: Option<Pubkey>,
     /// Minimum percentage of upvotes/downvote required for approval/dismissal, as basis point (e.g., 1000 = 10%)
-    pub vote_pct: u16,
-    /// Minimum percentage of signature required for funds withdrawal, as basis point (e.g., 1000 = 10%)
-    pub min_sig_pct: u16,
-    /// Lifetime of a proposal in seconds (e.g., 604800 = 7 days)
-    pub proposal_lifetime: i64,
+    pub consensus_pct: u16,
+    /// Lifetime of a proposal/promotion in seconds (e.g., 604800 = 7 days)
+    pub consensus_lifetime: i64,
     /// Number of dao members
     pub members_count: u64,
+    /// Number of dao council members
+    pub council_count: u64,
     /// PDA bump
     pub bump: u8,
     /// Treasury bump
