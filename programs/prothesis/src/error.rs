@@ -19,6 +19,10 @@ pub enum ProthesisError {
     #[msg("Voting is only allowed on pending proposals")]
     ProposalNotPending,
 
+    /// Returned when trying to resolve a proposal that has previously been resolved
+    #[msg("Proposal has already been resolved")]
+    ProposalAlreadyResolved,
+
     /// Returned when the specified vote is neither 0 nor 1
     #[msg("Invalid vote type: A vote must be either 1 for upvote or 0 for downvote")]
     InvalidVoteType,
