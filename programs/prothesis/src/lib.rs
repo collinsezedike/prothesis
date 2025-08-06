@@ -33,6 +33,10 @@ pub mod prothesis {
         )
     }
 
+    pub fn fund_dao(ctx: Context<FundDAO>, amount: u64) -> Result<()> {
+        ctx.accounts.fund_dao(amount)
+    }
+    
     pub fn submit_proposal(
         ctx: Context<SubmitProposal>,
         title: String,

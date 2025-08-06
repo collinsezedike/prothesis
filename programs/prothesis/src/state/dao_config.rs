@@ -14,8 +14,12 @@ pub struct DAOConfig {
     pub min_sig_pct: u16,
     /// Lifetime of a proposal in seconds (e.g., 604800 = 7 days)
     pub proposal_lifetime: i64,
+    /// Number of dao members
+    pub members_count: u64,
     /// PDA bump
     pub bump: u8,
+    /// Treasury bump
+    pub treasury_bump: u8,
 }
 
 impl DAOConfig {

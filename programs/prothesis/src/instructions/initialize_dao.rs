@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{constants::DAO_CONFIG_SEED, state::DAOConfig};
+use crate::{constants::{DAO_CONFIG_SEED, TREASURY_SEED}, state::DAOConfig, };
 
 #[derive(Accounts)]
 #[instruction(id: u64)]
@@ -16,6 +16,12 @@ pub struct InitializeDAO<'info> {
         space = DAOConfig::SPACE
     )]
     pub dao_config: Account<'info, DAOConfig>,
+
+    #[account(
+        seeds = [TREASURY_SEED, dao_config.key().as_ref()], 
+        bump
+    )]
+    pub treasury: SystemAccount<'info>,
 
     pub system_program: Program<'info, System>,
 }
@@ -36,7 +42,9 @@ impl<'info> InitializeDAO<'info> {
             vote_pct,
             min_sig_pct,
             proposal_lifetime,
+            members_count: 0,
             bump: bumps.dao_config,
+            treasury_bump: bumps.treasury,
         });
 
         Ok(())
