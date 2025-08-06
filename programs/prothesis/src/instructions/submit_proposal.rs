@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use crate::{
     constants::{DAO_CONFIG_SEED, MEMBER_SEED, PROPOSAL_SEED},
     error::ProthesisError,
-    state::{DAOConfig, Member, Proposal, ProposalStatus},
+    state::{DAOConfig, Member, Proposal, Status},
 };
 
 #[derive(Accounts)]
@@ -41,6 +41,7 @@ impl<'info> SubmitProposal<'info> {
         &mut self,
         title: String,
         content: String,
+        treasury: Pubkey,
         bumps: &SubmitProposalBumps,
     ) -> Result<()> {
         require!(title.len() <= 64, ProthesisError::TitleTooLong);
@@ -50,10 +51,11 @@ impl<'info> SubmitProposal<'info> {
             author: self.member.key(),
             title,
             content,
+            treasury,
             upvotes: 0,
             downvotes: 0,
             created_at: Clock::get()?.unix_timestamp,
-            status: ProposalStatus::Pending,
+            status: Status::Pending,
 
             bump: bumps.proposal,
         });

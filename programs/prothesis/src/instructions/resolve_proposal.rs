@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use crate::{
     constants::{DAO_CONFIG_SEED, MEMBER_SEED, PROPOSAL_SEED},
     error::ProthesisError,
-    state::{DAOConfig, Member, Proposal, ProposalStatus},
+    state::{DAOConfig, Member, Proposal, Status},
 };
 
 #[derive(Accounts)]
@@ -36,31 +36,18 @@ pub struct ResolveProposal<'info> {
 
 impl<'info> ResolveProposal<'info> {
     pub fn resolve_proposal(&mut self) -> Result<()> {
-        // Require proposal to be uresolved
-        require!(
-            self.proposal.status == ProposalStatus::Pending,
-            ProthesisError::ProposalAlreadyResolved
-        );
+        match self.proposal.status {
+            Status::Approved => {
+                // Mint NFT
+            }
+            Status::Dismissed | Status::Expired => {} // Do nothing, just close the account
+            Status::Pending => return Err(ProthesisError::CannotResolveBeforeReview.into()),
+        };
 
-        let vote_threshold =
-            (self.dao_config.vote_pct as u64 * self.dao_config.members_count) / 10_000;
+        Ok(())
+    }
 
-        // Check if upvotes have crossed the threshold
-        if self.proposal.upvotes >= vote_threshold {
-            self.proposal.status = ProposalStatus::Approved
-        }
-
-        // Check if downvotes have crossed the threshold
-        if self.proposal.downvotes >= vote_threshold {
-            self.proposal.status = ProposalStatus::Dismissed
-        }
-
-        // Check if proposal have crossed the expiry time
-        let time_elasped = (Clock::get()?.unix_timestamp - self.proposal.created_at) / 86400;
-        if time_elasped >= self.dao_config.proposal_lifetime {
-            self.proposal.status = ProposalStatus::Expired
-        }
-
+    pub fn mint_nft(&mut self) -> Result<()> {
         Ok(())
     }
 }
