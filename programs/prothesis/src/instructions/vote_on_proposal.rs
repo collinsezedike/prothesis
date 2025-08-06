@@ -1,9 +1,9 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::{ DAO_CONFIG_SEED, PROPOSAL_SEED, VOTE_SEED },
+    constants::{DAO_CONFIG_SEED, PROPOSAL_SEED, VOTE_SEED},
     error::ProthesisError,
-    state::{ DAOConfig, Proposal, Vote, VoteType },
+    state::{DAOConfig, Proposal, ProposalStatus, Vote, VoteType},
 };
 
 #[derive(Accounts)]
@@ -38,6 +38,11 @@ pub struct VoteOnProposal<'info> {
 }
 
 impl<'info> VoteOnProposal<'info> {
+    require!(
+        self.proposal.status == ProposalStatus::Pending,
+        ProthesisError::ProposalNotPending
+    );
+
     pub fn vote_on_proposal(&mut self, vote: u8) -> Result<()> {
         self.vote.vote_type = match vote {
             0 => VoteType::Downvote,
