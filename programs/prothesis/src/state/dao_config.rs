@@ -23,5 +23,5 @@ pub struct DAOConfig {
 }
 
 impl DAOConfig {
-    pub const SPACE: usize = 8 + DAOConfig::INIT_SPACE; //
+    pub const SPACE: usize = 8 + DAOConfig::INIT_SPACE;
 }

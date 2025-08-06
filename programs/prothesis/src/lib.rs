@@ -36,6 +36,10 @@ pub mod prothesis {
     pub fn fund_dao(ctx: Context<FundDAO>, amount: u64) -> Result<()> {
         ctx.accounts.fund_dao(amount)
     }
+
+    pub fn add_member(ctx: Context<AddMember>) -> Result<()> {
+        ctx.accounts.add_member(&ctx.bumps)
+    }
     
     pub fn submit_proposal(
         ctx: Context<SubmitProposal>,
