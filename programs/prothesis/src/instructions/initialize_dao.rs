@@ -59,6 +59,7 @@ impl<'info> InitializeDAO<'info> {
 
         // Initialize creator as a council member
         self.member.set_inner(Member {
+            owner: self.creator.key(),
             is_council: 1,
             joined_at: Clock::get()?.unix_timestamp,
             bump: bumps.member,

@@ -37,16 +37,23 @@ pub mod prothesis {
         ctx.accounts.initiate_promotion(&ctx.bumps)
     }
 
-    pub fn vote_on_promotion(ctx: Context<VoteOnPromotion>, vote: u8) -> Result<()> {
-        ctx.accounts.vote_on_promotion(vote)
+    pub fn initiate_demotion(ctx: Context<InitiateDemotion>) -> Result<()> {
+        ctx.accounts.initiate_demotion(&ctx.bumps)
+    }
+    pub fn initiate_removal(ctx: Context<InitiateRemoval>) -> Result<()> {
+        ctx.accounts.initiate_removal(&ctx.bumps)
     }
 
-    pub fn review_promotion(ctx: Context<ReviewPromotion>) -> Result<()> {
-        ctx.accounts.review_promotion()
+    pub fn vote_on_role_op(ctx: Context<VoteOnRoleOp>, vote: u8) -> Result<()> {
+        ctx.accounts.vote_on_role_op(vote)
     }
 
-    pub fn resolve_promotion(ctx: Context<ResolvePromotion>) -> Result<()> {
-        ctx.accounts.resolve_promotion()
+    pub fn review_role_op(ctx: Context<ReviewRoleOp>) -> Result<()> {
+        ctx.accounts.review_role_op()
+    }
+
+    pub fn resolve_role_op(ctx: Context<ResolveRoleOp>) -> Result<()> {
+        ctx.accounts.resolve_role_op()
     }
 
     pub fn submit_proposal(

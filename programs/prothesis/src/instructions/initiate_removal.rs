@@ -7,12 +7,9 @@ use crate::{
 };
 
 #[derive(Accounts)]
-pub struct InitiatePromotion<'info> {
+pub struct InitiateRemoval<'info> {
     #[account(mut)]
     pub council_signer: Signer<'info>,
-
-    #[account(mut)]
-    pub nominee: Signer<'info>,
 
     #[account(
         seeds = [DAO_CONFIG_SEED, dao_config.id.to_le_bytes().as_ref()],
@@ -22,16 +19,17 @@ pub struct InitiatePromotion<'info> {
 
     #[account(
         init,
-        payer = nominee,
+        payer = council_signer,
         seeds = [ROLE_OP_SEED, nominated_member.key().as_ref(), dao_config.key().as_ref()],
         bump,
         space = RoleOp::SPACE
     )]
-    pub promotion: Account<'info, RoleOp>,
+    pub removal: Account<'info, RoleOp>,
 
     #[account(
-        seeds = [MEMBER_SEED, nominee.key().as_ref(), dao_config.key().as_ref()],
+        seeds = [MEMBER_SEED, nominated_member.owner.key().as_ref(), dao_config.key().as_ref()],
         bump = nominated_member.bump,
+        constraint = nominated_member.is_council == 1 @ ProthesisError::NotCouncilMember
     )]
     pub nominated_member: Account<'info, Member>,
 
@@ -45,16 +43,16 @@ pub struct InitiatePromotion<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> InitiatePromotion<'info> {
-    pub fn initiate_promotion(&mut self, bumps: &InitiatePromotionBumps) -> Result<()> {
-        self.promotion.set_inner(RoleOp {
-            op_type: RoleOpType::PromoteToCouncil,
+impl<'info> InitiateRemoval<'info> {
+    pub fn initiate_removal(&mut self, bumps: &InitiateRemovalBumps) -> Result<()> {
+        self.removal.set_inner(RoleOp {
+            op_type: RoleOpType::RemoveMember,
             member: self.nominated_member.key(),
             upvotes: 0,
             downvotes: 0,
             created_at: Clock::get()?.unix_timestamp,
             status: Status::Pending,
-            bump: bumps.promotion,
+            bump: bumps.removal,
         });
 
         Ok(())

@@ -4,6 +4,8 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(InitSpace)]
 pub struct Member {
+    /// Wallet that owns this member account.
+    pub owner: Pubkey,
     /// Council member or not - 0 = false, 1 = true
     pub is_council: u8,
     /// Time the member joined

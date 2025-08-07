@@ -43,6 +43,7 @@ pub struct AddMember<'info> {
 impl<'info> AddMember<'info> {
     pub fn add_member(&mut self, bumps: &AddMemberBumps) -> Result<()> {
         self.new_member.set_inner(Member {
+            owner: self.aspirant.key(),
             is_council: 0, // Not a council member
             joined_at: Clock::get()?.unix_timestamp,
             bump: bumps.new_member,
