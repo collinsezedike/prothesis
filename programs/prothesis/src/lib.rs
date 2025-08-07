@@ -33,6 +33,10 @@ pub mod prothesis {
         ctx.accounts.add_member(&ctx.bumps)
     }
 
+    pub fn exit_dao(ctx: Context<ExitDao>) -> Result<()> {
+        ctx.accounts.exit_dao()
+    }
+
     pub fn initiate_promotion(ctx: Context<InitiatePromotion>) -> Result<()> {
         ctx.accounts.initiate_promotion(&ctx.bumps)
     }
@@ -74,7 +78,7 @@ pub mod prothesis {
         ctx.accounts.review_proposal()
     }
 
-    // pub fn resolve_proposal(ctx: Context<ResolveProposal>) -> Result<()> {
-    //     ctx.accounts.resolve_proposal()
-    // }
+    pub fn resolve_proposal(ctx: Context<ResolveProposal>) -> Result<()> {
+        ctx.accounts.resolve_proposal()
+    }
 }

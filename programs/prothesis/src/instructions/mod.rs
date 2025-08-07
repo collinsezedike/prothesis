@@ -1,5 +1,5 @@
 pub mod add_member;
-pub mod fund_dao;
+pub mod exit_dao;
 pub mod fund_dao;
 pub mod initialize_dao;
 pub mod initiate_demotion;
@@ -14,6 +14,7 @@ pub mod vote_on_proposal;
 pub mod vote_on_role_op;
 
 pub use add_member::*;
+pub use exit_dao::*;
 pub use fund_dao::*;
 pub use initialize_dao::*;
 pub use initiate_demotion::*;
