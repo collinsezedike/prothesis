@@ -41,7 +41,7 @@ impl<'info> VoteOnPromotion<'info> {
             1 => self.promotion.upvotes += 1,
             _ => return Err(ProthesisError::InvalidVoteType.into()),
         };
-        
+
         Ok(())
     }
 }

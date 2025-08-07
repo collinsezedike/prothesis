@@ -47,7 +47,7 @@ pub struct InitiatePromotion<'info> {
 
 impl<'info> InitiatePromotion<'info> {
     pub fn initiate_promotion(&mut self, bumps: &InitiatePromotionBumps) -> Result<()> {
-        self.promotion.set_inner( Promotion {
+        self.promotion.set_inner(Promotion {
             member: self.aspiring_council_member.key(),
             upvotes: 0,
             downvotes: 0,

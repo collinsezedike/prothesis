@@ -61,7 +61,7 @@ impl<'info> ResolvePromotion<'info> {
                 self.council_member.is_council = 1;
                 self.dao_config.council_count += 1;
             }
-            Status::Dismissed | Status::Expired => {}, // Do nothing, just close the account
+            Status::Dismissed | Status::Expired => {} // Do nothing, just close the account
             Status::Pending => return Err(ProthesisError::CannotResolveBeforeReview.into()),
         };
 
