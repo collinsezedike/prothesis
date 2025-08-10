@@ -51,7 +51,7 @@ impl<'info> InitializeDAO<'info> {
             id,
             consensus_pct,
             consensus_lifetime,
-            members_count: 0,
+            members_count: 1,
             council_count: 1,
             bump: bumps.dao_config,
             treasury_bump: bumps.treasury,
