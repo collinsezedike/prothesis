@@ -4,7 +4,8 @@ import { Prothesis } from "../target/types/prothesis";
 import { PublicKey, Keypair, LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
 import { expect } from "chai";
 
-import { getMemberAccount } from "./helpers";
+import { generateSigner, getDAOConfigPDA, getDAOTreasury, getMemberAccount, getRoleOpPDA, getRoleOpVotePDA, } from "./helpers";
+
 
 describe("prothesis", () => {
   // Configure the client to use the local cluster
@@ -14,25 +15,30 @@ describe("prothesis", () => {
   const program = anchor.workspace.prothesis as Program<Prothesis>;
 
   // Test wallets
-  const creator = Keypair.generate();
-  const person1 = Keypair.generate();
-  const person2 = Keypair.generate();
-  const person3 = Keypair.generate();
-  const nonMember = Keypair.generate();
+  let creator: Keypair;
+  let person1: Keypair;
+  let person2: Keypair;
+  let person3: Keypair;
+  let nonMember: Keypair;
 
   // DAO parameters
-  const daoId = new BN(1);
+  const daoId = new anchor.BN(1023203920390);
   const consensusPct = 5100; // 51%
-  const consensusLifetime = new BN(604800); // 7 days in seconds
+  const consensusLifetime = new anchor.BN(604800); // 7 days in seconds
 
   // PDAs
   let daoConfigPDA: PublicKey;
   let treasuryPDA: PublicKey;
+
   let creatorMemberAccount: PublicKey;
   let person1MemberAccount: PublicKey;
   let person2MemberAccount: PublicKey;
   let person3MemberAccount: PublicKey;
-  let roleOpPDA: PublicKey;
+
+  let promotionRoleOpPDA: PublicKey;
+  let demotionRoleOpPDA: PublicKey;
+  let removalRoleOpPDA: PublicKey;
+
   let proposalPDA: PublicKey;
   let roleOpVotePDA: PublicKey;
   let proposalVotePDA: PublicKey;
@@ -42,31 +48,20 @@ describe("prothesis", () => {
   const proposalContent = "This is a test proposal for the DAO";
 
   before(async () => {
-    // Airdrop SOL to test wallets
-    const wallets = [creator, person1, person2, person3, nonMember];
-    for (const wallet of wallets) {
-      const airdropSig = await provider.connection.requestAirdrop(
-        wallet.publicKey,
-        2 * LAMPORTS_PER_SOL
-      );
-      await provider.connection.confirmTransaction(airdropSig);
-    }
+    // Generate Signers
+    creator = await generateSigner(provider);
+    person1 = await generateSigner(provider);
+    person2 = await generateSigner(provider);
+    person3 = await generateSigner(provider);
+    nonMember = await generateSigner(provider);
 
     // Derive PDAs
-    [daoConfigPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from("dao"), daoId.toArrayLike(Buffer, "le", 8)],
-      program.programId
-    );
-
-    [treasuryPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from("treasury"), daoConfigPDA.toBuffer()],
-      program.programId
-    );
-
-    creatorMemberAccount = getMemberAccount(creator.publicKey, daoConfigPDA, program.programId);
-    person1MemberAccount = getMemberAccount(person1.publicKey, daoConfigPDA, program.programId);
-    person2MemberAccount = getMemberAccount(person2.publicKey, daoConfigPDA, program.programId);
-    person3MemberAccount = getMemberAccount(person3.publicKey, daoConfigPDA, program.programId);
+    daoConfigPDA = await getDAOConfigPDA(daoId);
+    treasuryPDA = getDAOTreasury(daoConfigPDA);
+    creatorMemberAccount = getMemberAccount(creator.publicKey, daoConfigPDA);
+    person1MemberAccount = getMemberAccount(person1.publicKey, daoConfigPDA);
+    person2MemberAccount = getMemberAccount(person2.publicKey, daoConfigPDA);
+    person3MemberAccount = getMemberAccount(person3.publicKey, daoConfigPDA);
   });
 
   describe("DAO Initialization and Membership", () => {
@@ -93,7 +88,7 @@ describe("prothesis", () => {
     });
 
     it("Should fund the DAO treasury", async () => {
-      const fundAmount = new BN(0.5 * LAMPORTS_PER_SOL);
+      const fundAmount = new anchor.BN(0.5 * LAMPORTS_PER_SOL);
 
       const treasuryBalanceBefore = await provider.connection.getBalance(treasuryPDA);
 
@@ -138,12 +133,6 @@ describe("prothesis", () => {
     });
 
     it("Should add another member", async () => {
-      // Derive member PDA
-      [person2MemberAccount] = PublicKey.findProgramAddressSync(
-        [Buffer.from("member"), daoConfigPDA.toBuffer(), person2.publicKey.toBuffer()],
-        program.programId
-      );
-
       await program.methods
         .addMember()
         .accountsStrict({
@@ -167,12 +156,6 @@ describe("prothesis", () => {
     });
 
     it("Should add a third member", async () => {
-      // Derive member PDA
-      [person3MemberAccount] = PublicKey.findProgramAddressSync(
-        [Buffer.from("member"), daoConfigPDA.toBuffer(), person3.publicKey.toBuffer()],
-        program.programId
-      );
-
       await program.methods
         .addMember()
         .accountsStrict({
@@ -193,21 +176,16 @@ describe("prothesis", () => {
   });
 
   describe("Role Operations", () => {
-    it("Should initiate a promotion for a member", async () => {
-      [roleOpPDA] = PublicKey.findProgramAddressSync(
-        [
-          Buffer.from("role operation"),
-          person1.publicKey.toBuffer(),
-          daoConfigPDA.toBuffer(),
-        ],
-        program.programId
-      );
+    before(async () => {
+      promotionRoleOpPDA = getRoleOpPDA(person1MemberAccount, daoConfigPDA);
+    })
 
+    it("Should initiate a promotion for a member", async () => {
       await program.methods
         .initiatePromotion()
         .accountsStrict({
           daoConfig: daoConfigPDA,
-          promotion: roleOpPDA,
+          promotion: promotionRoleOpPDA,
           nominee: person1.publicKey,
           nominatedMember: person1MemberAccount,
           councilSigner: creator.publicKey,
@@ -218,40 +196,22 @@ describe("prothesis", () => {
         .rpc();
 
       // Verify role op was created
-      const roleOp = await program.account.roleOp.fetch(roleOpPDA);
+      const roleOp = await program.account.roleOp.fetch(promotionRoleOpPDA);
       expect(roleOp.member.toString()).to.equal(person1MemberAccount.toString());
-      expect(roleOp.opType).to.equal(0); // Promotion
+      expect("promoteToCouncil" in roleOp.opType).to.be.true;
       expect(roleOp.status.pending).to.not.be.undefined;
       expect(roleOp.upvotes.toString()).to.equal("0");
       expect(roleOp.downvotes.toString()).to.equal("0");
     });
 
-    it("Should vote on a role operation", async () => {
-      // Derive role operation PDA
-      [roleOpPDA] = PublicKey.findProgramAddressSync(
-        [
-          Buffer.from("role operation"),
-          person1.publicKey.toBuffer(),
-          daoConfigPDA.toBuffer(),
-        ],
-        program.programId
-      );
-      // Derive vote PDA
-      [roleOpVotePDA] = PublicKey.findProgramAddressSync(
-        [
-          Buffer.from("vote"),
-          roleOpPDA.toBuffer(),
-          person2.publicKey.toBuffer()
-        ],
-        program.programId
-      );
+    it("Should upvote on a role operation", async () => {
+      roleOpVotePDA = getRoleOpVotePDA(person1MemberAccount, promotionRoleOpPDA);
 
-      // Vote 1 = upvote
       await program.methods
         .voteOnRoleOp(1)
         .accountsStrict({
           daoConfig: daoConfigPDA,
-          roleOp: roleOpPDA,
+          roleOp: promotionRoleOpPDA,
           vote: roleOpVotePDA,
           voter: person2.publicKey,
           voterMember: person2MemberAccount,
@@ -262,32 +222,80 @@ describe("prothesis", () => {
 
       // Verify vote was recorded
       const vote = await program.account.vote.fetch(roleOpVotePDA);
-      expect(vote.voter.toString()).to.equal(person2.publicKey.toString());
-      expect(vote.voteType).to.equal(1); // Upvote
+      expect("upvote" in vote.voteType).to.be.true;
 
       // Verify role op was updated
-      const roleOp = await program.account.roleOp.fetch(roleOpPDA);
+      const roleOp = await program.account.roleOp.fetch(promotionRoleOpPDA);
+      expect(roleOp.upvotes.toString()).to.equal("1");
+    });
+
+    it("Should downvote on a role operation", async () => {
+      roleOpVotePDA = getRoleOpVotePDA(person2MemberAccount, promotionRoleOpPDA);
+
+      await program.methods
+        .voteOnRoleOp(1)
+        .accountsStrict({
+          daoConfig: daoConfigPDA,
+          roleOp: promotionRoleOpPDA,
+          vote: roleOpVotePDA,
+          voter: person2.publicKey,
+          voterMember: person2MemberAccount,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([person2])
+        .rpc();
+
+      // Verify vote was recorded
+      const vote = await program.account.vote.fetch(roleOpVotePDA);
+      expect("downvote" in vote.voteType).to.be.true;
+
+      // Verify role op was updated
+      const roleOp = await program.account.roleOp.fetch(promotionRoleOpPDA);
+      expect(roleOp.downvotes.toString()).to.equal("1");
+    });
+
+    it("Should allow upvoting a role operation from a different account", async () => {
+      roleOpVotePDA = getRoleOpVotePDA(person3MemberAccount, promotionRoleOpPDA);
+
+      await program.methods
+        .voteOnRoleOp(1)
+        .accountsStrict({
+          daoConfig: daoConfigPDA,
+          roleOp: promotionRoleOpPDA,
+          vote: roleOpVotePDA,
+          voter: person3.publicKey,
+          voterMember: person3MemberAccount,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([person2])
+        .rpc();
+
+      // Verify vote was recorded
+      const vote = await program.account.vote.fetch(roleOpVotePDA);
+      expect("upvote" in vote.voteType).to.be.true;
+
+
+      // Verify role op was updated
+      const roleOp = await program.account.roleOp.fetch(promotionRoleOpPDA);
       expect(roleOp.upvotes.toString()).to.equal("2");
     });
 
     it("Should review a role operation", async () => {
-      // Have person3 vote as well to reach consensus
-      const person3VotePDA = await createVoteAccount(person3, roleOpPDA, "role_op_vote", 1);
-
       // Review the role op
       await program.methods
         .reviewRoleOp()
         .accountsStrict({
           daoConfig: daoConfigPDA,
-          roleOp: roleOpPDA,
+          roleOp: promotionRoleOpPDA,
           reviewer: creator.publicKey,
-          reviewerMember: await getMemberAccount(creator.publicKey),
+          reviewerMember: creatorMemberAccount,
+          systemProgram: SystemProgram.programId,
         })
         .signers([creator])
         .rpc();
 
       // Verify role op status was updated
-      const roleOp = await program.account.roleOp.fetch(roleOpPDA);
+      const roleOp = await program.account.roleOp.fetch(promotionRoleOpPDA);
       expect(roleOp.status.approved).to.not.be.undefined;
     });
 
@@ -296,10 +304,12 @@ describe("prothesis", () => {
         .resolveRoleOp()
         .accountsStrict({
           daoConfig: daoConfigPDA,
-          roleOp: roleOpPDA,
-          targetMember: person1MemberAccount,
+          treasury: treasuryPDA,
+          roleOp: promotionRoleOpPDA,
+          nominatedMember: person1MemberAccount,
           resolver: creator.publicKey,
-          resolverMember: await getMemberAccount(creator.publicKey),
+          resolverMember: creatorMemberAccount,
+          systemProgram: SystemProgram.programId,
         })
         .signers([creator])
         .rpc();
@@ -314,15 +324,6 @@ describe("prothesis", () => {
     });
 
     it("Should initiate a demotion for a member", async () => {
-      // Derive role op PDA for demotion
-      [roleOpPDA] = PublicKey.findProgramAddressSync(
-        [
-          Buffer.from("role operation"),
-          person1.publicKey.toBuffer(),
-          daoConfigPDA.toBuffer(),
-        ],
-        program.programId
-      );
 
       await program.methods
         .initiateDemotion()
@@ -331,7 +332,7 @@ describe("prothesis", () => {
           roleOp: roleOpPDA,
           targetMember: person1MemberAccount,
           initiator: creator.publicKey,
-          initiatorMember: await getMemberAccount(creator.publicKey),
+          initiatorMember: getMemberAccount(creator, daoConfigPDA.publicKey),
           systemProgram: SystemProgram.programId,
         })
         .signers([creator])
@@ -339,14 +340,14 @@ describe("prothesis", () => {
 
       // Verify role op was created
       const roleOp = await program.account.roleOp.fetch(roleOpPDA);
-      expect(roleOp.targetMember.toString()).to.equal(person1MemberAccount.toString());
+      expect(roleOp.member.toString()).to.equal(person1MemberAccount.toString());
       expect(roleOp.opType).to.equal(1); // Demotion
       expect(roleOp.status.pending).to.not.be.undefined;
     });
 
     it("Should initiate a removal for a member", async () => {
       // Derive role op PDA for removal
-      const removalRoleOpPDA = await createRoleOpAccount(person2.publicKey, 2); // 2 for removal
+      const promotionRoleOpPDA = await createRoleOpAccount(person2.publicKey, 2); // 2 for removal
 
       await program.methods
         .initiateRemoval()
@@ -355,7 +356,7 @@ describe("prothesis", () => {
           roleOp: removalRoleOpPDA,
           targetMember: person2MemberAccount,
           initiator: creator.publicKey,
-          initiatorMember: await getMemberAccount(creator.publicKey),
+          initiatorMember: getMemberAccount(creator.publicKey),
           systemProgram: SystemProgram.programId,
         })
         .signers([creator])
@@ -363,7 +364,7 @@ describe("prothesis", () => {
 
       // Verify role op was created
       const roleOp = await program.account.roleOp.fetch(removalRoleOpPDA);
-      expect(roleOp.targetMember.toString()).to.equal(person2MemberAccount.toString());
+      expect(roleOp.member.toString()).to.equal(person2MemberAccount.toString());
       expect(roleOp.opType).to.equal(2); // Removal
       expect(roleOp.status.pending).to.not.be.undefined;
     });
@@ -372,7 +373,7 @@ describe("prothesis", () => {
   describe("Proposals", () => {
     it("Should submit a proposal", async () => {
       // Derive proposal PDA
-      const proposalId = new BN(1);
+      const proposalId = new anchor.BN(1);
       [proposalPDA] = PublicKey.findProgramAddressSync(
         [
           Buffer.from("proposal"),
@@ -398,7 +399,7 @@ describe("prothesis", () => {
       const proposal = await program.account.proposal.fetch(proposalPDA);
       expect(proposal.title).to.equal(proposalTitle);
       expect(proposal.content).to.equal(proposalContent);
-      expect(proposal.submitter.toString()).to.equal(person1.publicKey.toString());
+      expect(proposal.author.toString()).to.equal(person1.publicKey.toString());
       expect(proposal.treasury.toString()).to.equal(treasuryPDA.toString());
       expect(proposal.status.pending).to.not.be.undefined;
       expect(proposal.upvotes.toString()).to.equal("1"); // Submitter's vote
@@ -415,7 +416,6 @@ describe("prothesis", () => {
         program.programId
       );
 
-      // Vote 1 = upvote
       await program.methods
         .voteOnProposal(1)
         .accountsStrict({
@@ -423,7 +423,7 @@ describe("prothesis", () => {
           proposal: proposalPDA,
           vote: proposalVotePDA,
           voter: creator.publicKey,
-          voterMember: await getMemberAccount(creator.publicKey),
+          voterMember: getMemberAccount(creator, daoConfigPDA.publicKey),
           systemProgram: SystemProgram.programId,
         })
         .signers([creator])
@@ -450,7 +450,7 @@ describe("prothesis", () => {
           daoConfig: daoConfigPDA,
           proposal: proposalPDA,
           reviewer: creator.publicKey,
-          reviewerMember: await getMemberAccount(creator.publicKey),
+          reviewerMember: getMemberAccount(creator, daoConfigPDA.publicKey),
         })
         .signers([creator])
         .rpc();
@@ -472,7 +472,7 @@ describe("prothesis", () => {
           treasury: treasuryPDA,
           beneficiary: person1.publicKey,
           resolver: creator.publicKey,
-          resolverMember: await getMemberAccount(creator.publicKey),
+          resolverMember: getMemberAccount(creator, daoConfigPDA.publicKey),
           systemProgram: SystemProgram.programId,
         })
         .signers([creator])
@@ -519,7 +519,7 @@ describe("prothesis", () => {
   });
 
   async function createRoleOpAccount(targetOwner: PublicKey, opType: number): Promise<PublicKey> {
-    const targetMemberAccount = await getMemberAccount(targetOwner);
+    const targetMemberAccount = getMemberAccount(targetOwner, daoConfigPDA);
     const [roleOpPDA] = PublicKey.findProgramAddressSync(
       [
         Buffer.from("role operation"),
@@ -555,7 +555,7 @@ describe("prothesis", () => {
           roleOp: targetPDA,
           vote: votePDA,
           voter: voter.publicKey,
-          voterMember: await getMemberAccount(voter.publicKey),
+          voterMember: getMemberAccount(voter, daoConfigPDA.publicKey),
           systemProgram: SystemProgram.programId,
         })
         .signers([voter])
@@ -568,7 +568,7 @@ describe("prothesis", () => {
           proposal: targetPDA,
           vote: votePDA,
           voter: voter.publicKey,
-          voterMember: await getMemberAccount(voter.publicKey),
+          voterMember: getMemberAccount(voter, daoConfigPDA.publicKey),
           systemProgram: SystemProgram.programId,
         })
         .signers([voter])
