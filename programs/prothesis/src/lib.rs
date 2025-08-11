@@ -13,7 +13,7 @@ declare_id!("5Smo5qyWNHkaQ5KouJ8X1em8Zwwy3Bvwz3DWELjaZQkp");
 
 #[program]
 pub mod prothesis {
-    
+
     use super::*;
 
     pub fn initialize_dao(
