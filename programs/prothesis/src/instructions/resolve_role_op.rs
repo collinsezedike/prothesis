@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::{DAO_CONFIG_SEED, MEMBER_SEED, ROLE_OP_SEED, TREASURY_SEED},
+    constants::{DAO_CONFIG_SEED, MEMBER_SEED, TREASURY_SEED},
     error::ProthesisError,
     state::{DAOConfig, Member, RoleOp, RoleOpType, Status},
 };
@@ -20,7 +20,7 @@ pub struct ResolveRoleOp<'info> {
     #[account(
         mut,
         close = treasury, // Rent goes to the treasury as a small contribution to the DAO
-        seeds = [ROLE_OP_SEED, role_op.seed.to_le_bytes().as_ref(), role_op.member.as_ref(), dao_config.key().as_ref()],
+        seeds = [role_op.seed.as_ref(), role_op.member.as_ref(), dao_config.key().as_ref()],
         bump = role_op.bump
     )]
     pub role_op: Account<'info, RoleOp>,

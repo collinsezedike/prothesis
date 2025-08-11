@@ -1,14 +1,15 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::{DAO_CONFIG_SEED, MEMBER_SEED, ROLE_OP_SEED},
+    constants::{DAO_CONFIG_SEED, MEMBER_SEED},
     error::ProthesisError,
+    role_op,
     state::{DAOConfig, Member, RoleOp, RoleOpType, Status},
 };
 
 #[derive(Accounts)]
-#[instruction(seed: u64)]
-pub struct InitiateDemotion<'info> {
+#[instruction(role_op_seed: Vec<u8>)]
+pub struct InitiateRoleOp<'info> {
     #[account(mut)]
     pub council_signer: Signer<'info>,
 
@@ -21,11 +22,11 @@ pub struct InitiateDemotion<'info> {
     #[account(
         init,
         payer = council_signer,
-        seeds = [ROLE_OP_SEED, seed.to_le_bytes().as_ref(), nominated_member.key().as_ref(), dao_config.key().as_ref()],
+        seeds = [role_op_seed.as_ref(), nominated_member.key().as_ref(), dao_config.key().as_ref()],
         bump,
         space = RoleOp::SPACE
     )]
-    pub demotion: Account<'info, RoleOp>,
+    pub role_op: Account<'info, RoleOp>,
 
     #[account(
         seeds = [MEMBER_SEED, nominated_member.owner.key().as_ref(), dao_config.key().as_ref()],
@@ -44,17 +45,28 @@ pub struct InitiateDemotion<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> InitiateDemotion<'info> {
-    pub fn initiate_demotion(&mut self, seed: u64, bumps: &InitiateDemotionBumps) -> Result<()> {
-        self.demotion.set_inner(RoleOp {
-            seed,
-            op_type: RoleOpType::DemoteFromCouncil,
+impl<'info> InitiateRoleOp<'info> {
+    pub fn initiate_role_op(
+        &mut self,
+        role_op_seed: Vec<u8>,
+        bumps: &InitiateRoleOpBumps,
+    ) -> Result<()> {
+        let role_op_type = match role_op_seed.as_slice() {
+            b"promotion" => RoleOpType::PromoteToCouncil,
+            b"demotion" => RoleOpType::DemoteFromCouncil,
+            b"removal" => RoleOpType::RemoveMember,
+            _ => return Err(ProthesisError::InvalidRoleOpSeed.into()),
+        };
+
+        self.role_op.set_inner(RoleOp {
+            seed: role_op_seed.to_vec(),
+            op_type: role_op_type,
             member: self.nominated_member.key(),
             upvotes: 0,
             downvotes: 0,
             created_at: Clock::get()?.unix_timestamp,
             status: Status::Pending,
-            bump: bumps.demotion,
+            bump: bumps.role_op,
         });
 
         Ok(())

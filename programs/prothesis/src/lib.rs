@@ -13,6 +13,7 @@ declare_id!("5Smo5qyWNHkaQ5KouJ8X1em8Zwwy3Bvwz3DWELjaZQkp");
 
 #[program]
 pub mod prothesis {
+    
     use super::*;
 
     pub fn initialize_dao(
@@ -37,15 +38,8 @@ pub mod prothesis {
         ctx.accounts.exit_dao()
     }
 
-    pub fn initiate_promotion(ctx: Context<InitiatePromotion>, seed: u64) -> Result<()> {
-        ctx.accounts.initiate_promotion(seed, &ctx.bumps)
-    }
-
-    pub fn initiate_demotion(ctx: Context<InitiateDemotion>, seed: u64) -> Result<()> {
-        ctx.accounts.initiate_demotion(seed, &ctx.bumps)
-    }
-    pub fn initiate_removal(ctx: Context<InitiateRemoval>, seed: u64) -> Result<()> {
-        ctx.accounts.initiate_removal(seed, &ctx.bumps)
+    pub fn initiate_role_op(ctx: Context<InitiateRoleOp>, role_op_seed: Vec<u8>) -> Result<()> {
+        ctx.accounts.initiate_role_op(role_op_seed, &ctx.bumps)
     }
 
     pub fn vote_on_role_op(ctx: Context<VoteOnRoleOp>, vote: u8) -> Result<()> {

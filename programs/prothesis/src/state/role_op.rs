@@ -17,7 +17,8 @@ pub enum RoleOpType {
 #[derive(InitSpace)]
 pub struct RoleOp {
     /// Seed/ID to differentiate the role operations
-    pub seed: u64,
+    #[max_len(9)] // because promotion is the longest of all the options
+    pub seed: Vec<u8>,
     /// The type of operation
     pub op_type: RoleOpType,
     /// The target member of the role operation

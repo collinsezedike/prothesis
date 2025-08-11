@@ -31,7 +31,7 @@ pub enum ProthesisError {
     #[msg("Invalid vote type: A vote must be either 1 for upvote or 0 for downvote")]
     InvalidVoteType,
 
-    /// Returned when a user tries to vote twice on the same proposal
-    #[msg("User has already voted on this proposal")]
-    DuplicateVote,
+    /// Return when the role operation seed is invalid or not recognized.
+    #[msg("Invalid role operation seed: A role operation seed must be either b'promotion', b'demotion' or b'ramoval'")]
+    InvalidRoleOpSeed,
 }
