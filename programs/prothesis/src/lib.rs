@@ -59,9 +59,10 @@ pub mod prothesis {
         title: String,
         content: String,
         treasury: Pubkey,
+        amount_required: u64,
     ) -> Result<()> {
         ctx.accounts
-            .submit_proposal(title, content, treasury, &ctx.bumps)
+            .submit_proposal(title, content, treasury, amount_required, &ctx.bumps)
     }
 
     pub fn vote_on_proposal(ctx: Context<VoteOnProposal>, vote: u8) -> Result<()> {

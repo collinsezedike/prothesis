@@ -42,6 +42,7 @@ impl<'info> SubmitProposal<'info> {
         title: String,
         content: String,
         treasury: Pubkey,
+        amount_required: u64,
         bumps: &SubmitProposalBumps,
     ) -> Result<()> {
         require!(title.len() <= 64, ProthesisError::TitleTooLong);
@@ -52,6 +53,7 @@ impl<'info> SubmitProposal<'info> {
             title,
             content,
             treasury,
+            amount_required,
             upvotes: 0,
             downvotes: 0,
             created_at: Clock::get()?.unix_timestamp,

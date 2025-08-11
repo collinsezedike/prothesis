@@ -16,6 +16,8 @@ pub struct Proposal {
     /// Content of the proposal (max 2048 chars)
     #[max_len(MAX_CONTENT_LENGTH)]
     pub content: String,
+    /// How much is needed for the proposal (in Lamports)
+    pub amount_required: u64,
     /// Number of upvotes received
     pub upvotes: u64,
     /// Number of downvotes received
