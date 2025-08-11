@@ -36,7 +36,6 @@ pub struct ResolveRoleOp<'info> {
     #[account(
         seeds = [MEMBER_SEED, resolver.key().as_ref(), dao_config.key().as_ref()],
         bump = resolver_member.bump,
-        constraint = resolver_member.is_council @ ProthesisError::NotCouncilMember
     )]
     pub resolver_member: Account<'info, Member>,
 
