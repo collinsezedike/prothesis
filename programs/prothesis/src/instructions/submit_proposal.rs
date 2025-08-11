@@ -20,9 +20,9 @@ pub struct SubmitProposal<'info> {
 
     #[account(
         seeds = [MEMBER_SEED, author.key().as_ref(), dao_config.key().as_ref()],
-        bump = member.bump
+        bump = author_member.bump
     )]
-    pub member: Account<'info, Member>,
+    pub author_member: Account<'info, Member>,
 
     #[account(
         init,
@@ -49,7 +49,7 @@ impl<'info> SubmitProposal<'info> {
         require!(content.len() <= 2048, ProthesisError::ContentTooLong);
 
         self.proposal.set_inner(Proposal {
-            author: self.member.key(),
+            author: self.author_member.key(),
             title,
             content,
             treasury,

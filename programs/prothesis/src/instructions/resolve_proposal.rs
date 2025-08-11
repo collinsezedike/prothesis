@@ -27,9 +27,9 @@ pub struct ResolveProposal<'info> {
 
     #[account(
         seeds = [MEMBER_SEED, resolver.key().as_ref(), dao_config.key().as_ref()],
-        bump = member.bump
+        bump = resolver_member.bump
     )]
-    pub member: Account<'info, Member>,
+    pub resolver_member: Account<'info, Member>,
 
     pub system_program: Program<'info, System>,
 }

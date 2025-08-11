@@ -27,9 +27,9 @@ pub struct ReviewProposal<'info> {
 
     #[account(
         seeds = [MEMBER_SEED, reviewer.key().as_ref(), dao_config.key().as_ref()],
-        bump = member.bump
+        bump = reviewer_member.bump
     )]
-    pub member: Account<'info, Member>,
+    pub reviewer_member: Account<'info, Member>,
 
     pub system_program: Program<'info, System>,
 }

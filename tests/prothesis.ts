@@ -469,13 +469,15 @@ describe("prothesis", () => {
     })
 
     it("Should submit a proposal", async () => {
+      const amount_required = new anchor.BN(1 * LAMPORTS_PER_SOL);
+
       await program.methods
-        .submitProposal(proposalTitle, proposalContent, person1.publicKey)
+        .submitProposal(proposalTitle, proposalContent, person1.publicKey, amount_required)
         .accountsStrict({
           daoConfig: daoConfigPDA,
           proposal: proposalPDA,
           author: person1.publicKey,
-          member: person1MemberAccount,
+          authorMember: person1MemberAccount,
           systemProgram: SystemProgram.programId,
         })
         .signers([person1])
@@ -500,7 +502,7 @@ describe("prothesis", () => {
           proposal: proposalPDA,
           vote: proposalVotePDA,
           voter: person1.publicKey,
-          member: person1MemberAccount,
+          voterMember: person1MemberAccount,
           systemProgram: SystemProgram.programId,
         })
         .signers([person1])
@@ -525,7 +527,7 @@ describe("prothesis", () => {
           proposal: proposalPDA,
           vote: proposalVotePDA,
           voter: creator.publicKey,
-          member: creatorMemberAccount,
+          voterMember: creatorMemberAccount,
           systemProgram: SystemProgram.programId,
         })
         .signers([creator])
@@ -550,7 +552,7 @@ describe("prothesis", () => {
           proposal: proposalPDA,
           vote: proposalVotePDA,
           voter: person3.publicKey,
-          member: person3MemberAccount,
+          voterMember: person3MemberAccount,
           systemProgram: SystemProgram.programId,
         })
         .signers([person3])
@@ -575,7 +577,7 @@ describe("prothesis", () => {
           proposal: proposalPDA,
           vote: proposalVotePDA,
           voter: person2.publicKey,
-          member: person2MemberAccount,
+          voterMember: person2MemberAccount,
           systemProgram: SystemProgram.programId,
         })
         .signers([person2])
@@ -597,7 +599,7 @@ describe("prothesis", () => {
           daoConfig: daoConfigPDA,
           proposal: proposalPDA,
           reviewer: person2.publicKey, // Anybody can review a proposal, not just the author or council members
-          member: person2MemberAccount,
+          reviewerMember: person2MemberAccount,
           systemProgram: SystemProgram.programId
         })
         .signers([person2])
@@ -621,7 +623,7 @@ describe("prothesis", () => {
           daoConfig: daoConfigPDA,
           proposal: proposalPDA,
           resolver: person3.publicKey,
-          member: person3MemberAccount,
+          resolverMember: person3MemberAccount,
           systemProgram: SystemProgram.programId,
         })
         .signers([person3])

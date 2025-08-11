@@ -26,14 +26,14 @@ pub struct VoteOnProposal<'info> {
 
     #[account(
         seeds = [MEMBER_SEED, voter.key().as_ref(), dao_config.key().as_ref()],
-        bump = member.bump
+        bump = voter_member.bump
     )]
-    pub member: Account<'info, Member>,
+    pub voter_member: Account<'info, Member>,
 
     #[account(
         init,
         payer = voter,
-        seeds = [VOTE_SEED, member.key().as_ref(), proposal.key().as_ref()],
+        seeds = [VOTE_SEED, voter_member.key().as_ref(), proposal.key().as_ref()],
         bump,
         space = Vote::SPACE
     )]
