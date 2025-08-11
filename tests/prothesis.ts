@@ -22,7 +22,7 @@ describe("prothesis", () => {
   let nonMember: Keypair;
 
   // DAO parameters
-  const daoId = new anchor.BN(1023203920390);
+  const daoId = new anchor.BN(Math.floor(Math.random() * 10_000_000_000));
   const consensusPct = 5100; // 51%
   const consensusLifetime = new anchor.BN(604800); // 7 days in seconds
 
@@ -181,8 +181,9 @@ describe("prothesis", () => {
     })
 
     it("Should initiate a promotion for a member", async () => {
+      const promtionRoleOpSeed = new anchor.BN(Math.floor(Math.random() * 10_000_000_000));
       await program.methods
-        .initiatePromotion()
+        .initiatePromotion(promtionRoleOpSeed)
         .accountsStrict({
           daoConfig: daoConfigPDA,
           promotion: promotionRoleOpPDA,
@@ -324,39 +325,41 @@ describe("prothesis", () => {
     });
 
     it("Should initiate a demotion for a member", async () => {
+      const demotionRoleOpSeed = new anchor.BN(Math.floor(Math.random() * 10_000_000_000));
+      let demotionRoleOpPDA = getRoleOpPDA(person1MemberAccount, daoConfigPDA)
 
       await program.methods
-        .initiateDemotion()
+        .initiateDemotion(demotionRoleOpSeed)
         .accountsStrict({
           daoConfig: daoConfigPDA,
-          roleOp: roleOpPDA,
-          targetMember: person1MemberAccount,
-          initiator: creator.publicKey,
-          initiatorMember: getMemberAccount(creator, daoConfigPDA.publicKey),
+          demotion: demotionRoleOpPDA,
+          nominatedMember: person1MemberAccount,
+          councilSigner: creator.publicKey,
+          councilMember: creatorMemberAccount,
           systemProgram: SystemProgram.programId,
         })
         .signers([creator])
         .rpc();
 
       // Verify role op was created
-      const roleOp = await program.account.roleOp.fetch(roleOpPDA);
+      const roleOp = await program.account.roleOp.fetch(demotionRoleOpPDA);
       expect(roleOp.member.toString()).to.equal(person1MemberAccount.toString());
       expect(roleOp.opType).to.equal(1); // Demotion
       expect(roleOp.status.pending).to.not.be.undefined;
     });
 
     it("Should initiate a removal for a member", async () => {
-      // Derive role op PDA for removal
-      const promotionRoleOpPDA = await createRoleOpAccount(person2.publicKey, 2); // 2 for removal
+      const removalRoleOpSeed = new anchor.BN(Math.floor(Math.random() * 10_000_000_000));
+      const removalRoleOpPDA = getRoleOpPDA(person1MemberAccount, daoConfigPDA); // 2 for removal
 
       await program.methods
-        .initiateRemoval()
+        .initiateDemotion(remo)
         .accountsStrict({
           daoConfig: daoConfigPDA,
-          roleOp: removalRoleOpPDA,
-          targetMember: person2MemberAccount,
-          initiator: creator.publicKey,
-          initiatorMember: getMemberAccount(creator.publicKey),
+          demotion: demotionRoleOpPDA,
+          nominatedMember: person1MemberAccount,
+          councilSigner: creator.publicKey,
+          councilMember: creatorMemberAccount,
           systemProgram: SystemProgram.programId,
         })
         .signers([creator])

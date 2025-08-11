@@ -37,9 +37,9 @@ export function getMemberAccount(owner: PublicKey, daoConfigPDA: PublicKey): Pub
     return memberAccount;
 }
 
-export function getRoleOpPDA(nominatedMember: PublicKey, daoConfigPDA: PublicKey): PublicKey {
+export function getRoleOpPDA(seed: anchor.BN, nominatedMember: PublicKey, daoConfigPDA: PublicKey): PublicKey {
     const [roleOpPDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from("role operation"), nominatedMember.toBuffer(), daoConfigPDA.toBuffer()],
+        [Buffer.from("role operation"), seed.toBuffer("le", 8), nominatedMember.toBuffer(), daoConfigPDA.toBuffer()],
         programId
     );
     return roleOpPDA;
