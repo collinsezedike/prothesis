@@ -19,7 +19,6 @@ describe("prothesis", () => {
   let person1: Keypair;
   let person2: Keypair;
   let person3: Keypair;
-  let nonMember: Keypair;
 
   // DAO parameters
   const daoId = new anchor.BN(Math.floor(Math.random() * 10_000_000_000));
@@ -40,7 +39,6 @@ describe("prothesis", () => {
   let removalRoleOpPDA: PublicKey;
 
   let proposalPDA: PublicKey;
-  let proposalVotePDA: PublicKey;
 
   // Proposal parameters
   const proposalTitle = "Test Proposal";
@@ -52,7 +50,6 @@ describe("prothesis", () => {
     person1 = await generateSigner(provider);
     person2 = await generateSigner(provider);
     person3 = await generateSigner(provider);
-    nonMember = await generateSigner(provider);
 
     // Derive PDAs
     daoConfigPDA = await getDAOConfigPDA(daoId);
