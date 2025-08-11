@@ -24,6 +24,7 @@ describe("prothesis", () => {
   const daoId = new anchor.BN(Math.floor(Math.random() * 10_000_000_000));
   const consensusPct = 5100; // 51%
   const consensusLifetime = new anchor.BN(5); // 5 seconds
+  const minMultisigSigners = new anchor.BN(3); // At least 3 signers
 
   // PDAs
   let daoConfigPDA: PublicKey;
@@ -62,8 +63,8 @@ describe("prothesis", () => {
 
   describe("DAO Initialization and Membership", () => {
     it("Should initialize a new DAO", async () => {
-      const tx = await program.methods
-        .initializeDao(daoId, consensusPct, consensusLifetime)
+      await program.methods
+        .initializeDao(daoId, consensusPct, consensusLifetime, minMultisigSigners)
         .accountsStrict({
           daoConfig: daoConfigPDA,
           treasury: treasuryPDA,
@@ -466,7 +467,7 @@ describe("prothesis", () => {
     })
 
     it("Should submit a proposal", async () => {
-      const amount_required = new anchor.BN(1 * LAMPORTS_PER_SOL);
+      const amount_required = new anchor.BN(0.01 * LAMPORTS_PER_SOL);
 
       await program.methods
         .submitProposal(proposalTitle, proposalContent, person1.publicKey, amount_required)
@@ -612,7 +613,7 @@ describe("prothesis", () => {
       const proposalTreasury = proposalAccount.treasury
 
       const daoTreasuryBalanceBefore = await provider.connection.getBalance(treasuryPDA);
-      const proposalTreasryBalanceBefore = await provider.connection.getBalance(proposalTreasury);
+      const proposalTreasuryBalanceBefore = await provider.connection.getBalance(proposalTreasury);
 
       await program.methods
         .resolveProposal()
@@ -621,19 +622,28 @@ describe("prothesis", () => {
           proposal: proposalPDA,
           resolver: person3.publicKey,
           resolverMember: person3MemberAccount,
+          daoTreasury: treasuryPDA,
+          proposalTreasury: person1.publicKey,
           systemProgram: SystemProgram.programId,
         })
-        .signers([person3])
+        .signers([person3, creator, person1]).remainingAccounts([
+          { pubkey: creator.publicKey, isSigner: true, isWritable: true, },
+          { pubkey: person1.publicKey, isSigner: true, isWritable: true, },
+          { pubkey: creatorMemberAccount, isSigner: false, isWritable: false, },
+          { pubkey: person1MemberAccount, isSigner: false, isWritable: false, }
+        ])
         .rpc();
 
-      // Verify proposal was resolved (funds transferred)
+      // Fetch balances after funding
       const daoTreasuryBalanceAfter = await provider.connection.getBalance(treasuryPDA);
-      const proposalTreasryBalanceAfter = await provider.connection.getBalance(proposalTreasury);
+      const proposalTreasuryBalanceAfter = await provider.connection.getBalance(proposalTreasury);
 
-      // The proposal doesn't specify an amount, so we can't verify exact transfer
-      // But we can verify that treasury balance decreased and person1 balance increased
-      // expect(daoTreasuryBalanceAfter).to.be.lessThan(daoTreasuryBalanceBefore);
-      // expect(proposalTreasryBalanceAfter).to.be.greaterThan(proposalTreasryBalanceBefore);
+      // Verify the treasury's balance decreased exactly by amount required
+      expect(daoTreasuryBalanceAfter).to.equal(daoTreasuryBalanceBefore - proposalAccount.amountRequired.toNumber());
+
+      // Verify the proposal treasury's balance increased exactly by amount required
+      expect(proposalTreasuryBalanceAfter).to.equal(proposalTreasuryBalanceBefore + proposalAccount.amountRequired.toNumber());
+
     });
   });
 

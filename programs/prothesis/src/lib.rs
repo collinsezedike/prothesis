@@ -21,9 +21,15 @@ pub mod prothesis {
         id: u64,
         consensus_pct: u16,
         consensus_lifetime: i64,
+        min_multisig_signers: u64,
     ) -> Result<()> {
-        ctx.accounts
-            .initialize_dao(id, consensus_pct, consensus_lifetime, &ctx.bumps)
+        ctx.accounts.initialize_dao(
+            id,
+            consensus_pct,
+            consensus_lifetime,
+            min_multisig_signers,
+            &ctx.bumps,
+        )
     }
 
     pub fn fund_dao(ctx: Context<FundDAO>, amount: u64) -> Result<()> {
@@ -74,6 +80,7 @@ pub mod prothesis {
     }
 
     pub fn resolve_proposal(ctx: Context<ResolveProposal>) -> Result<()> {
-        ctx.accounts.resolve_proposal()
+        ctx.accounts
+            .resolve_proposal(ctx.remaining_accounts.to_vec())
     }
 }

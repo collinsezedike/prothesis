@@ -46,4 +46,16 @@ pub enum ProthesisError {
     /// The treasury account provided does not match the treasury specified in the proposal.
     #[msg("Treasury account does not match the proposal's treasury")]
     MismatchedTreasuryAccount,
+
+    /// Member account must be a signer for this transaction.
+    #[msg("Member account must sign the transaction")]
+    MemberMustSign,
+
+    /// At least one council member is required to fund a proposal
+    #[msg("Cannot fund proposal without a council member")]
+    NoCouncilMemberSigned,
+
+    /// Not enough multisig signers provided to approve the action
+    #[msg("Insufficient multisig signers to approve this action.")]
+    InsufficientMultisigSigners,
 }

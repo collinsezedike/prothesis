@@ -14,6 +14,8 @@ pub struct DAOConfig {
     pub members_count: u64,
     /// Number of dao council members
     pub council_count: u64,
+    /// Number of multisig signers required to execute a treasury withdrawal
+    pub min_multisig_signers: u64,
     /// PDA bump
     pub bump: u8,
     /// Treasury bump

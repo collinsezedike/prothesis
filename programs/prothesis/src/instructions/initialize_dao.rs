@@ -44,6 +44,7 @@ impl<'info> InitializeDAO<'info> {
         id: u64,
         consensus_pct: u16,
         consensus_lifetime: i64,
+        min_multisig_signers: u64,
         bumps: &InitializeDAOBumps,
     ) -> Result<()> {
         // Initialize DAO Config
@@ -51,6 +52,7 @@ impl<'info> InitializeDAO<'info> {
             id,
             consensus_pct,
             consensus_lifetime,
+            min_multisig_signers,
             members_count: 1,
             council_count: 1,
             bump: bumps.dao_config,
