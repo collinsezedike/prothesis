@@ -37,9 +37,9 @@ export function getMemberAccount(owner: PublicKey, daoConfigPDA: PublicKey): Pub
     return memberAccount;
 }
 
-export function getRoleOpPDA(seed: anchor.BN, nominatedMember: PublicKey, daoConfigPDA: PublicKey): PublicKey {
+export function getRoleOpPDA(seed: string, nominatedMember: PublicKey, daoConfigPDA: PublicKey): PublicKey {
     const [roleOpPDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from("role operation"), seed.toBuffer("le", 8), nominatedMember.toBuffer(), daoConfigPDA.toBuffer()],
+        [Buffer.from(seed), nominatedMember.toBuffer(), daoConfigPDA.toBuffer()],
         programId
     );
     return roleOpPDA;
@@ -48,6 +48,14 @@ export function getRoleOpPDA(seed: anchor.BN, nominatedMember: PublicKey, daoCon
 export function getRoleOpVotePDA(voterMember: PublicKey, roleOpPDA: PublicKey): PublicKey {
     const [roleOpVotePDA] = PublicKey.findProgramAddressSync(
         [Buffer.from("vote"), voterMember.toBuffer(), roleOpPDA.toBuffer()],
+        programId
+    );
+    return roleOpVotePDA;
+}
+
+export function getProposalPDA(title: string, daoConfigPDA: PublicKey): PublicKey {
+    const [roleOpVotePDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("proposal"), Buffer.from(title), daoConfigPDA.toBuffer()],
         programId
     );
     return roleOpVotePDA;

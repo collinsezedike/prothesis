@@ -4,7 +4,7 @@ import { Prothesis } from "../target/types/prothesis";
 import { PublicKey, Keypair, LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
 import { expect } from "chai";
 
-import { generateSigner, getDAOConfigPDA, getDAOTreasury, getMemberAccount, getRoleOpPDA, getRoleOpVotePDA, } from "./helpers";
+import { generateSigner, getDAOConfigPDA, getDAOTreasury, getMemberAccount, getProposalPDA, getRoleOpPDA, getRoleOpVotePDA, } from "./helpers";
 
 
 describe("prothesis", () => {
@@ -40,7 +40,6 @@ describe("prothesis", () => {
   let removalRoleOpPDA: PublicKey;
 
   let proposalPDA: PublicKey;
-  let roleOpVotePDA: PublicKey;
   let proposalVotePDA: PublicKey;
 
   // Proposal parameters
@@ -85,6 +84,9 @@ describe("prothesis", () => {
       expect(daoConfig.consensusLifetime.toString()).to.equal(consensusLifetime.toString());
       expect(daoConfig.membersCount.toString()).to.equal("1"); // creator is the first member
       expect(daoConfig.councilCount.toString()).to.equal("1"); // creator is a council member
+
+      const memberAccount = await program.account.member.fetch(creatorMemberAccount);
+      expect(memberAccount.isCouncil).to.equal(true);
     });
 
     it("Should fund the DAO treasury", async () => {
@@ -124,7 +126,7 @@ describe("prothesis", () => {
       // Verify member was added
       const memberAccount = await program.account.member.fetch(person1MemberAccount);
       expect(memberAccount.owner.toString()).to.equal(person1.publicKey.toString());
-      expect(memberAccount.isCouncil).to.equal(0); // Not a council member
+      expect(memberAccount.isCouncil).to.equal(false);
 
       // Verify DAO config was updated
       const daoConfig = await program.account.daoConfig.fetch(daoConfigPDA);
@@ -177,36 +179,38 @@ describe("prothesis", () => {
 
   describe("Role Operations", () => {
     before(async () => {
-      promotionRoleOpPDA = getRoleOpPDA(person1MemberAccount, daoConfigPDA);
+      promotionRoleOpPDA = getRoleOpPDA("promotion", person1MemberAccount, daoConfigPDA);
+      removalRoleOpPDA = getRoleOpPDA("removal", person1MemberAccount, daoConfigPDA)
+      demotionRoleOpPDA = getRoleOpPDA("demotion", person1MemberAccount, daoConfigPDA)
     })
 
-    it("Should initiate a promotion for a member", async () => {
-      const promtionRoleOpSeed = new anchor.BN(Math.floor(Math.random() * 10_000_000_000));
+    it("Should initiate a promotion of a member", async () => {
+
       await program.methods
-        .initiatePromotion(promtionRoleOpSeed)
+        .initiateRoleOp(Buffer.from("promotion"))
         .accountsStrict({
           daoConfig: daoConfigPDA,
-          promotion: promotionRoleOpPDA,
-          nominee: person1.publicKey,
+          roleOp: promotionRoleOpPDA,
           nominatedMember: person1MemberAccount,
           councilSigner: creator.publicKey,
           councilMember: creatorMemberAccount,
           systemProgram: SystemProgram.programId,
         })
-        .signers([creator, person1])
+        .signers([creator])
         .rpc();
 
       // Verify role op was created
       const roleOp = await program.account.roleOp.fetch(promotionRoleOpPDA);
       expect(roleOp.member.toString()).to.equal(person1MemberAccount.toString());
+      expect(roleOp.seed.toString()).to.equal("promotion");
       expect("promoteToCouncil" in roleOp.opType).to.be.true;
       expect(roleOp.status.pending).to.not.be.undefined;
       expect(roleOp.upvotes.toString()).to.equal("0");
       expect(roleOp.downvotes.toString()).to.equal("0");
     });
 
-    it("Should upvote on a role operation", async () => {
-      roleOpVotePDA = getRoleOpVotePDA(person1MemberAccount, promotionRoleOpPDA);
+    it("Should upvote on a promotion", async () => {
+      const roleOpVotePDA = getRoleOpVotePDA(creatorMemberAccount, promotionRoleOpPDA);
 
       await program.methods
         .voteOnRoleOp(1)
@@ -214,11 +218,11 @@ describe("prothesis", () => {
           daoConfig: daoConfigPDA,
           roleOp: promotionRoleOpPDA,
           vote: roleOpVotePDA,
-          voter: person2.publicKey,
-          voterMember: person2MemberAccount,
+          voter: creator.publicKey,
+          voterMember: creatorMemberAccount,
           systemProgram: SystemProgram.programId,
         })
-        .signers([person2])
+        .signers([creator])
         .rpc();
 
       // Verify vote was recorded
@@ -230,59 +234,7 @@ describe("prothesis", () => {
       expect(roleOp.upvotes.toString()).to.equal("1");
     });
 
-    it("Should downvote on a role operation", async () => {
-      roleOpVotePDA = getRoleOpVotePDA(person2MemberAccount, promotionRoleOpPDA);
-
-      await program.methods
-        .voteOnRoleOp(1)
-        .accountsStrict({
-          daoConfig: daoConfigPDA,
-          roleOp: promotionRoleOpPDA,
-          vote: roleOpVotePDA,
-          voter: person2.publicKey,
-          voterMember: person2MemberAccount,
-          systemProgram: SystemProgram.programId,
-        })
-        .signers([person2])
-        .rpc();
-
-      // Verify vote was recorded
-      const vote = await program.account.vote.fetch(roleOpVotePDA);
-      expect("downvote" in vote.voteType).to.be.true;
-
-      // Verify role op was updated
-      const roleOp = await program.account.roleOp.fetch(promotionRoleOpPDA);
-      expect(roleOp.downvotes.toString()).to.equal("1");
-    });
-
-    it("Should allow upvoting a role operation from a different account", async () => {
-      roleOpVotePDA = getRoleOpVotePDA(person3MemberAccount, promotionRoleOpPDA);
-
-      await program.methods
-        .voteOnRoleOp(1)
-        .accountsStrict({
-          daoConfig: daoConfigPDA,
-          roleOp: promotionRoleOpPDA,
-          vote: roleOpVotePDA,
-          voter: person3.publicKey,
-          voterMember: person3MemberAccount,
-          systemProgram: SystemProgram.programId,
-        })
-        .signers([person2])
-        .rpc();
-
-      // Verify vote was recorded
-      const vote = await program.account.vote.fetch(roleOpVotePDA);
-      expect("upvote" in vote.voteType).to.be.true;
-
-
-      // Verify role op was updated
-      const roleOp = await program.account.roleOp.fetch(promotionRoleOpPDA);
-      expect(roleOp.upvotes.toString()).to.equal("2");
-    });
-
-    it("Should review a role operation", async () => {
-      // Review the role op
+    it("Should review a promotion", async () => {
       await program.methods
         .reviewRoleOp()
         .accountsStrict({
@@ -300,7 +252,7 @@ describe("prothesis", () => {
       expect(roleOp.status.approved).to.not.be.undefined;
     });
 
-    it("Should resolve an approved role operation", async () => {
+    it("Should resolve an approved promotion", async () => {
       await program.methods
         .resolveRoleOp()
         .accountsStrict({
@@ -317,7 +269,123 @@ describe("prothesis", () => {
 
       // Verify member was promoted
       const memberAccount = await program.account.member.fetch(person1MemberAccount);
-      expect(memberAccount.isCouncil).to.equal(1); // Now a council member
+      expect(memberAccount.isCouncil).to.equal(true);
+
+      // Verify DAO config was updated
+      const daoConfig = await program.account.daoConfig.fetch(daoConfigPDA);
+      expect(daoConfig.councilCount.toString()).to.equal("2");
+    });
+
+    it("Should initiate a removal of a member", async () => {
+      await program.methods
+        .initiateRoleOp(Buffer.from("removal"))
+        .accountsStrict({
+          daoConfig: daoConfigPDA,
+          roleOp: removalRoleOpPDA,
+          nominatedMember: person1MemberAccount,
+          councilSigner: creator.publicKey,
+          councilMember: creatorMemberAccount,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([creator])
+        .rpc();
+
+      // Verify role op was created
+      const roleOp = await program.account.roleOp.fetch(removalRoleOpPDA);
+      expect(roleOp.member.toString()).to.equal(person1MemberAccount.toString());
+      expect(roleOp.seed.toString()).to.equal("removal");
+      expect("removeMember" in roleOp.opType).to.be.true;
+      expect(roleOp.status.pending).to.not.be.undefined;
+      expect(roleOp.upvotes.toString()).to.equal("0");
+      expect(roleOp.downvotes.toString()).to.equal("0");
+    });
+
+    it("Should downvote on a removal", async () => {
+      const roleOpVotePDA = getRoleOpVotePDA(person2MemberAccount, removalRoleOpPDA);
+
+      await program.methods
+        .voteOnRoleOp(0)
+        .accountsStrict({
+          daoConfig: daoConfigPDA,
+          roleOp: removalRoleOpPDA,
+          vote: roleOpVotePDA,
+          voter: person2.publicKey,
+          voterMember: person2MemberAccount,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([person2])
+        .rpc();
+
+      // Verify vote was recorded
+      const vote = await program.account.vote.fetch(roleOpVotePDA);
+      expect("downvote" in vote.voteType).to.be.true;
+
+      // Verify role op was updated
+      const roleOp = await program.account.roleOp.fetch(removalRoleOpPDA);
+      expect(roleOp.downvotes.toString()).to.equal("1");
+    });
+
+    it("Should allow downvoting a removal from a different account", async () => {
+      const roleOpVotePDA = getRoleOpVotePDA(person3MemberAccount, removalRoleOpPDA);
+
+      await program.methods
+        .voteOnRoleOp(0)
+        .accountsStrict({
+          daoConfig: daoConfigPDA,
+          roleOp: removalRoleOpPDA,
+          vote: roleOpVotePDA,
+          voter: person3.publicKey,
+          voterMember: person3MemberAccount,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([person3])
+        .rpc();
+
+      // Verify vote was recorded
+      const vote = await program.account.vote.fetch(roleOpVotePDA);
+      expect("downvote" in vote.voteType).to.be.true;
+
+      // Verify role op was updated
+      const roleOp = await program.account.roleOp.fetch(removalRoleOpPDA);
+      expect(roleOp.downvotes.toString()).to.equal("2");
+    });
+
+    it("Should review a removal", async () => {
+      await program.methods
+        .reviewRoleOp()
+        .accountsStrict({
+          daoConfig: daoConfigPDA,
+          roleOp: removalRoleOpPDA,
+          reviewer: person3.publicKey, // Anybody can review a removal, not just council members
+          reviewerMember: person3MemberAccount,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([person3])
+        .rpc();
+
+      // Verify role op status was updated
+      const roleOp = await program.account.roleOp.fetch(removalRoleOpPDA);
+      expect(roleOp.status.dismissed).to.not.be.undefined;
+    });
+
+    it("Should resolve a dismissed removal", async () => {
+      await program.methods
+        .resolveRoleOp()
+        .accountsStrict({
+          daoConfig: daoConfigPDA,
+          treasury: treasuryPDA,
+          roleOp: removalRoleOpPDA,
+          nominatedMember: person1MemberAccount,
+          resolver: person2.publicKey,   // Anybody can resolve a removal, not just council members
+          resolverMember: person2MemberAccount,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([person2])
+        .rpc();
+
+      // Verify member was promoted
+      const memberAccount = await program.account.member.fetch(person1MemberAccount);
+      expect(memberAccount.isCouncil).to.equal(true);
 
       // Verify DAO config was updated
       const daoConfig = await program.account.daoConfig.fetch(daoConfigPDA);
@@ -325,14 +393,13 @@ describe("prothesis", () => {
     });
 
     it("Should initiate a demotion for a member", async () => {
-      const demotionRoleOpSeed = new anchor.BN(Math.floor(Math.random() * 10_000_000_000));
-      let demotionRoleOpPDA = getRoleOpPDA(person1MemberAccount, daoConfigPDA)
+      demotionRoleOpPDA = getRoleOpPDA("demotion", person1MemberAccount, daoConfigPDA)
 
       await program.methods
-        .initiateDemotion(demotionRoleOpSeed)
+        .initiateRoleOp(Buffer.from("demotion"))
         .accountsStrict({
           daoConfig: daoConfigPDA,
-          demotion: demotionRoleOpPDA,
+          roleOp: demotionRoleOpPDA,
           nominatedMember: person1MemberAccount,
           councilSigner: creator.publicKey,
           councilMember: creatorMemberAccount,
@@ -344,55 +411,70 @@ describe("prothesis", () => {
       // Verify role op was created
       const roleOp = await program.account.roleOp.fetch(demotionRoleOpPDA);
       expect(roleOp.member.toString()).to.equal(person1MemberAccount.toString());
-      expect(roleOp.opType).to.equal(1); // Demotion
+      expect(roleOp.seed.toString()).to.equal("demotion");
+      expect("demoteFromCouncil" in roleOp.opType).to.be.true;
       expect(roleOp.status.pending).to.not.be.undefined;
+      expect(roleOp.upvotes.toString()).to.equal("0");
+      expect(roleOp.downvotes.toString()).to.equal("0");
     });
 
-    it("Should initiate a removal for a member", async () => {
-      const removalRoleOpSeed = new anchor.BN(Math.floor(Math.random() * 10_000_000_000));
-      const removalRoleOpPDA = getRoleOpPDA(person1MemberAccount, daoConfigPDA); // 2 for removal
+    it("Should review a demotion", async () => {
+      // Wait for the demotion to expire
 
       await program.methods
-        .initiateDemotion(remo)
+        .reviewRoleOp()
         .accountsStrict({
           daoConfig: daoConfigPDA,
-          demotion: demotionRoleOpPDA,
+          roleOp: demotionRoleOpPDA,
+          reviewer: creator.publicKey,
+          reviewerMember: person3MemberAccount,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([person3])
+        .rpc();
+
+      // Verify role op status was updated
+      const roleOp = await program.account.roleOp.fetch(demotionRoleOpPDA);
+      expect(roleOp.status.expired).to.not.be.undefined;
+    });
+
+    it("Should resolve an expired demotion", async () => {
+      await program.methods
+        .resolveRoleOp()
+        .accountsStrict({
+          daoConfig: daoConfigPDA,
+          treasury: treasuryPDA,
+          roleOp: demotionRoleOpPDA,
           nominatedMember: person1MemberAccount,
-          councilSigner: creator.publicKey,
-          councilMember: creatorMemberAccount,
+          resolver: creator.publicKey,
+          resolverMember: creatorMemberAccount,
           systemProgram: SystemProgram.programId,
         })
         .signers([creator])
         .rpc();
 
-      // Verify role op was created
-      const roleOp = await program.account.roleOp.fetch(removalRoleOpPDA);
-      expect(roleOp.member.toString()).to.equal(person2MemberAccount.toString());
-      expect(roleOp.opType).to.equal(2); // Removal
-      expect(roleOp.status.pending).to.not.be.undefined;
+      // Verify member was not demoted
+      const memberAccount = await program.account.member.fetch(person1MemberAccount);
+      expect(memberAccount.isCouncil).to.equal(true);
+
+      // Verify DAO config was not updated
+      const daoConfig = await program.account.daoConfig.fetch(daoConfigPDA);
+      expect(daoConfig.councilCount.toString()).to.equal("2");
     });
   });
 
   describe("Proposals", () => {
     it("Should submit a proposal", async () => {
       // Derive proposal PDA
-      const proposalId = new anchor.BN(1);
-      [proposalPDA] = PublicKey.findProgramAddressSync(
-        [
-          Buffer.from("proposal"),
-          daoConfigPDA.toBuffer(),
-          proposalId.toArrayLike(Buffer, "le", 8)
-        ],
-        program.programId
-      );
+      proposalPDA = getProposalPDA(proposalTitle, daoConfigPDA)
 
       await program.methods
         .submitProposal(proposalTitle, proposalContent, treasuryPDA)
         .accountsStrict({
           daoConfig: daoConfigPDA,
           proposal: proposalPDA,
-          submitter: person1.publicKey,
-          submitterMember: person1MemberAccount,
+          author: person1.publicKey,
+          member: person1MemberAccount,
           systemProgram: SystemProgram.programId,
         })
         .signers([person1])
@@ -453,7 +535,8 @@ describe("prothesis", () => {
           daoConfig: daoConfigPDA,
           proposal: proposalPDA,
           reviewer: creator.publicKey,
-          reviewerMember: getMemberAccount(creator, daoConfigPDA.publicKey),
+          member: creatorMemberAccount,
+          systemProgram: SystemProgram.programId
         })
         .signers([creator])
         .rpc();
