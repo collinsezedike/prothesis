@@ -38,4 +38,12 @@ pub enum ProthesisError {
     /// Return when the role operation seed is invalid or not recognized.
     #[msg("Invalid role operation seed: A role operation seed must be either b'promotion', b'demotion' or b'ramoval'")]
     InvalidRoleOpSeed,
+
+    /// Treasury does not have enough funds to cover the proposal's requested amount
+    #[msg("Treasury balance is less than the proposal's required amount")]
+    InsufficientTreasuryBalance,
+
+    /// The treasury account provided does not match the treasury specified in the proposal.
+    #[msg("Treasury account does not match the proposal's treasury")]
+    MismatchedTreasuryAccount,
 }
