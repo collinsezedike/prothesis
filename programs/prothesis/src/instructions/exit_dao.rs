@@ -38,10 +38,15 @@ pub struct ExitDao<'info> {
 
 impl<'info> ExitDao<'info> {
     pub fn exit_dao(&mut self) -> Result<()> {
-        if self.exiting_member.is_council == 1 {
-            self.dao_config.council_count -= 1;
+        if self.exiting_member.is_council {
+            self.dao_config.council_count = self.dao_config.council_count
+                .checked_sub(1)
+                .ok_or(ProthesisError::CountOutOfRange)?;
         }
-        self.dao_config.members_count -= 1;
+
+        self.dao_config.members_count = self.dao_config.members_count
+            .checked_sub(1)
+            .ok_or(ProthesisError::CountOutOfRange)?;
 
         Ok(())
     }

@@ -31,14 +31,13 @@ pub struct InitiateRoleOp<'info> {
     #[account(
         seeds = [MEMBER_SEED, nominated_member.owner.key().as_ref(), dao_config.key().as_ref()],
         bump = nominated_member.bump,
-        constraint = nominated_member.is_council == 1 @ ProthesisError::NotCouncilMember
     )]
     pub nominated_member: Account<'info, Member>,
 
     #[account(
         seeds = [MEMBER_SEED, council_signer.key().as_ref(), dao_config.key().as_ref()],
         bump = council_member.bump,
-        constraint = council_member.is_council == 1 @ ProthesisError::NotCouncilMember
+        constraint = council_member.is_council @ ProthesisError::NotCouncilMember
     )]
     pub council_member: Account<'info, Member>,
 
@@ -57,6 +56,13 @@ impl<'info> InitiateRoleOp<'info> {
             b"removal" => RoleOpType::RemoveMember,
             _ => return Err(ProthesisError::InvalidRoleOpSeed.into()),
         };
+
+        if role_op_seed.as_slice() == b"demotion" {
+            require!(
+                self.nominated_member.is_council,
+                ProthesisError::NotCouncilMember
+            )
+        }
 
         self.role_op.set_inner(RoleOp {
             seed: role_op_seed.to_vec(),

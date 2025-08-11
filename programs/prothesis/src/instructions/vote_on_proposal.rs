@@ -56,8 +56,20 @@ impl<'info> VoteOnProposal<'info> {
         };
 
         match self.vote.vote_type {
-            VoteType::Downvote => self.proposal.downvotes += 1,
-            VoteType::Upvote => self.proposal.upvotes += 1,
+            VoteType::Downvote => {
+                self.proposal.downvotes = self
+                    .proposal
+                    .downvotes
+                    .checked_add(1)
+                    .ok_or(ProthesisError::CountOutOfRange)?
+            }
+            VoteType::Upvote => {
+                self.proposal.upvotes = self
+                    .proposal
+                    .upvotes
+                    .checked_add(1)
+                    .ok_or(ProthesisError::CountOutOfRange)?
+            }
         }
 
         Ok(())

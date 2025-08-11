@@ -7,6 +7,10 @@ pub enum ProthesisError {
     #[msg("Not a council member")]
     NotCouncilMember,
 
+    /// Error indicating that the count has either overflowed or underflowed
+    #[msg("Count overflow or underflow")]
+    CountOutOfRange,
+
     /// Returned when proposal title exceeds the maximum length
     #[msg("Proposal title exceeds maximum length")]
     TitleTooLong,

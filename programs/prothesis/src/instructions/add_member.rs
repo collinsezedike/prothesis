@@ -33,7 +33,7 @@ pub struct AddMember<'info> {
     #[account(
         seeds = [MEMBER_SEED, council_signer.key().as_ref(), dao_config.key().as_ref()],
         bump = council_member.bump,
-        constraint = council_member.is_council == 1 @ ProthesisError::NotCouncilMember
+        constraint = council_member.is_council @ ProthesisError::NotCouncilMember
     )]
     pub council_member: Account<'info, Member>,
 
@@ -44,12 +44,16 @@ impl<'info> AddMember<'info> {
     pub fn add_member(&mut self, bumps: &AddMemberBumps) -> Result<()> {
         self.new_member.set_inner(Member {
             owner: self.aspirant.key(),
-            is_council: 0, // Not a council member
+            is_council: false,
             joined_at: Clock::get()?.unix_timestamp,
             bump: bumps.new_member,
         });
 
-        self.dao_config.members_count += 1;
+        self.dao_config.members_count = self
+            .dao_config
+            .members_count
+            .checked_add(1)
+            .ok_or(ProthesisError::CountOutOfRange)?;
 
         Ok(())
     }

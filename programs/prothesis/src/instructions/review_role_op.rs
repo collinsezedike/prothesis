@@ -45,7 +45,7 @@ impl<'info> ReviewRoleOp<'info> {
         match self.role_op.op_type {
             RoleOpType::PromoteToCouncil | RoleOpType::DemoteFromCouncil => {
                 require!(
-                    self.reviewer_member.is_council == 1,
+                    self.reviewer_member.is_council,
                     ProthesisError::NotCouncilMember,
                 ); // Only council members can review a promotion or demotion
             }

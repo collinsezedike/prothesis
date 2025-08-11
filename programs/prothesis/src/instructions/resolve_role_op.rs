@@ -35,7 +35,7 @@ pub struct ResolveRoleOp<'info> {
     #[account(
         seeds = [MEMBER_SEED, resolver.key().as_ref(), dao_config.key().as_ref()],
         bump = resolver_member.bump,
-        constraint = resolver_member.is_council == 1 @ ProthesisError::NotCouncilMember
+        constraint = resolver_member.is_council @ ProthesisError::NotCouncilMember
     )]
     pub resolver_member: Account<'info, Member>,
 
@@ -56,20 +56,28 @@ impl<'info> ResolveRoleOp<'info> {
                 match self.role_op.op_type {
                     RoleOpType::PromoteToCouncil => {
                         require!(
-                            self.resolver_member.is_council == 1,
-                            ProthesisError::NotCouncilMember,
+                            self.resolver_member.is_council,
+                            ProthesisError::NotCouncilMember
                         );
-                        self.resolver_member.is_council = 1;
-                        self.dao_config.council_count += 1;
+                        self.resolver_member.is_council = true;
+                        self.dao_config.council_count = self
+                            .dao_config
+                            .council_count
+                            .checked_add(1)
+                            .ok_or(ProthesisError::CountOutOfRange)?;
                     }
 
                     RoleOpType::DemoteFromCouncil => {
                         require!(
-                            self.resolver_member.is_council == 1,
+                            self.resolver_member.is_council,
                             ProthesisError::NotCouncilMember,
                         );
-                        self.resolver_member.is_council = 0;
-                        self.dao_config.council_count -= 1;
+                        self.resolver_member.is_council = false;
+                        self.dao_config.council_count = self
+                            .dao_config
+                            .council_count
+                            .checked_sub(1)
+                            .ok_or(ProthesisError::CountOutOfRange)?;
                     }
 
                     RoleOpType::RemoveMember => {

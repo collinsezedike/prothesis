@@ -48,7 +48,7 @@ impl<'info> VoteOnRoleOp<'info> {
         match self.role_op.op_type {
             RoleOpType::PromoteToCouncil | RoleOpType::DemoteFromCouncil => {
                 require!(
-                    self.voter_member.is_council == 1,
+                    self.voter_member.is_council,
                     ProthesisError::NotCouncilMember,
                 ); // Only council members can vote for promotion or demotion
             }
@@ -62,8 +62,20 @@ impl<'info> VoteOnRoleOp<'info> {
         };
 
         match self.vote.vote_type {
-            VoteType::Downvote => self.role_op.downvotes += 1,
-            VoteType::Upvote => self.role_op.upvotes += 1,
+            VoteType::Downvote => {
+                self.role_op.downvotes = self
+                    .role_op
+                    .downvotes
+                    .checked_add(1)
+                    .ok_or(ProthesisError::CountOutOfRange)?
+            }
+            VoteType::Upvote => {
+                self.role_op.upvotes = self
+                    .role_op
+                    .upvotes
+                    .checked_add(1)
+                    .ok_or(ProthesisError::CountOutOfRange)?
+            }
         }
 
         Ok(())
