@@ -56,12 +56,12 @@ impl<'info> ReviewRoleOp<'info> {
             (self.dao_config.consensus_pct as u64 * self.dao_config.council_count) / 10_000;
 
         // Check if upvotes have crossed the threshold
-        if self.role_op.upvotes >= vote_threshold {
+        if self.role_op.upvotes >= vote_threshold.max(1) {
             self.role_op.status = Status::Approved
         }
 
         // Check if downvotes have crossed the threshold
-        if self.role_op.downvotes >= vote_threshold {
+        if self.role_op.downvotes >= vote_threshold.max(1) {
             self.role_op.status = Status::Dismissed
         }
 
