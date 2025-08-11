@@ -66,7 +66,7 @@ impl<'info> ReviewRoleOp<'info> {
         }
 
         // Check if role operation has passed the expiry time
-        let time_elasped = (Clock::get()?.unix_timestamp - self.role_op.created_at) / 86400;
+        let time_elasped = (Clock::get()?.unix_timestamp - self.role_op.created_at);
         if time_elasped >= self.dao_config.consensus_lifetime {
             self.role_op.status = Status::Expired
         }

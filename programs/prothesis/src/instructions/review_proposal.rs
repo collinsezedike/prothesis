@@ -56,7 +56,7 @@ impl<'info> ReviewProposal<'info> {
         }
 
         // Check if proposal has passed the expiry time
-        let time_elasped = (Clock::get()?.unix_timestamp - self.proposal.created_at) / 86400;
+        let time_elasped = (Clock::get()?.unix_timestamp - self.proposal.created_at);
         if time_elasped >= self.dao_config.consensus_lifetime {
             self.proposal.status = Status::Expired
         }
