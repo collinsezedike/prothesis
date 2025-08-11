@@ -1,9 +1,9 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::{DAO_CONFIG_SEED, MEMBER_SEED, ROLE_OP_SEED},
+    constants::{DAO_CONFIG_SEED, MEMBER_SEED, ROLE_OP_SEED, VOTE_SEED},
     error::ProthesisError,
-    state::{DAOConfig, Member, RoleOp, RoleOpType, Status},
+    state::{DAOConfig, Member, RoleOp, RoleOpType, Status, Vote, VoteType},
 };
 
 #[derive(Accounts)]
@@ -30,6 +30,15 @@ pub struct VoteOnRoleOp<'info> {
     )]
     pub voter_member: Account<'info, Member>,
 
+    #[account(
+        init,
+        payer = voter,
+        seeds = [VOTE_SEED, voter_member.key().as_ref(), role_op.key().as_ref()],
+        bump,
+        space = Vote::SPACE
+    )]
+    pub vote: Account<'info, Vote>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -46,11 +55,16 @@ impl<'info> VoteOnRoleOp<'info> {
             RoleOpType::RemoveMember => {} // Do nothing, anybody can vote for member removal
         }
 
-        match vote {
-            0 => self.role_op.downvotes += 1,
-            1 => self.role_op.upvotes += 1,
+        self.vote.vote_type = match vote {
+            0 => VoteType::Downvote,
+            1 => VoteType::Upvote,
             _ => return Err(ProthesisError::InvalidVoteType.into()),
         };
+
+        match self.vote.vote_type {
+            VoteType::Downvote => self.role_op.downvotes += 1,
+            VoteType::Upvote => self.role_op.upvotes += 1,
+        }
 
         Ok(())
     }
