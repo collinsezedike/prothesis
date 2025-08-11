@@ -12,6 +12,7 @@ pub struct ResolveRoleOp<'info> {
     pub resolver: Signer<'info>,
 
     #[account(
+        mut,
         seeds = [DAO_CONFIG_SEED, dao_config.id.to_le_bytes().as_ref()],
         bump = dao_config.bump
     )]
@@ -59,7 +60,8 @@ impl<'info> ResolveRoleOp<'info> {
                             self.resolver_member.is_council,
                             ProthesisError::NotCouncilMember
                         );
-                        self.resolver_member.is_council = true;
+
+                        self.nominated_member.is_council = true;
                         self.dao_config.council_count = self
                             .dao_config
                             .council_count
@@ -72,7 +74,8 @@ impl<'info> ResolveRoleOp<'info> {
                             self.resolver_member.is_council,
                             ProthesisError::NotCouncilMember,
                         );
-                        self.resolver_member.is_council = false;
+
+                        self.nominated_member.is_council = false;
                         self.dao_config.council_count = self
                             .dao_config
                             .council_count
@@ -88,6 +91,20 @@ impl<'info> ResolveRoleOp<'info> {
                         self.nominated_member
                             .to_account_info()
                             .assign(&self.system_program.key());
+
+                        if self.nominated_member.is_council {
+                            self.dao_config.council_count = self
+                                .dao_config
+                                .council_count
+                                .checked_sub(1)
+                                .ok_or(ProthesisError::CountOutOfRange)?;
+                        }
+
+                        self.dao_config.members_count = self
+                            .dao_config
+                            .members_count
+                            .checked_sub(1)
+                            .ok_or(ProthesisError::CountOutOfRange)?
                     }
                 }
             }
