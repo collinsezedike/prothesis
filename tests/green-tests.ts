@@ -7,7 +7,7 @@ import { expect } from "chai";
 import { generateSigner, getDAOConfigPDA, getDAOTreasury, getMemberAccount, getProposalPDA, getRoleOpPDA, getVotePDA, } from "./helpers";
 
 
-describe("prothesis", () => {
+describe("prothesis - positive tests", () => {
   // Configure the client to use the local cluster
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
