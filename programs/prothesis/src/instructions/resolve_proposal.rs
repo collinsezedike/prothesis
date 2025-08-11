@@ -53,7 +53,7 @@ impl<'info> ResolveProposal<'info> {
         match self.proposal.status {
             Status::Approved => {
                 self.check_signers(remaining_accounts)?;
-                // self.transfer_funds()?;
+                self.transfer_funds()?;
             }
             Status::Dismissed | Status::Expired => {} // Do nothing, just close the account
             Status::Pending => return Err(ProthesisError::CannotResolveBeforeReview.into()),
@@ -120,18 +120,20 @@ impl<'info> ResolveProposal<'info> {
             ProthesisError::MismatchedTreasuryAccount
         );
 
-        let seeds: &[&[&[u8]]] = &[&[
-            TREASURY_SEED,
-            &self.dao_config.id.to_le_bytes(),
-            &[self.dao_config.bump],
-        ]];
-
         let cpi_program = self.system_program.to_account_info();
 
         let cpi_accounts = Transfer {
             from: self.dao_treasury.to_account_info(),
             to: self.proposal_treasury.to_account_info(),
         };
+
+        let dao_config = self.dao_config.key();
+
+        let seeds: &[&[&[u8]]] = &[&[
+            TREASURY_SEED,
+            &dao_config.as_ref(),
+            &[self.dao_config.treasury_bump],
+        ]];
 
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, seeds);
 
