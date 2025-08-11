@@ -16,6 +16,8 @@ pub enum RoleOpType {
 #[account]
 #[derive(InitSpace)]
 pub struct RoleOp {
+    /// Seed/ID to differentiate the role operations
+    pub seed: u64,
     /// The type of operation
     pub op_type: RoleOpType,
     /// The target member of the role operation

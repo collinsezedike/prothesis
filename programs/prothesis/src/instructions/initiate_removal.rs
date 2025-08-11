@@ -7,6 +7,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
+#[instruction(seed: u64)]
 pub struct InitiateRemoval<'info> {
     #[account(mut)]
     pub council_signer: Signer<'info>,
@@ -20,7 +21,7 @@ pub struct InitiateRemoval<'info> {
     #[account(
         init,
         payer = council_signer,
-        seeds = [ROLE_OP_SEED, nominated_member.key().as_ref(), dao_config.key().as_ref()],
+        seeds = [ROLE_OP_SEED, seed.to_le_bytes().as_ref(), nominated_member.key().as_ref(), dao_config.key().as_ref()],
         bump,
         space = RoleOp::SPACE
     )]
@@ -44,8 +45,9 @@ pub struct InitiateRemoval<'info> {
 }
 
 impl<'info> InitiateRemoval<'info> {
-    pub fn initiate_removal(&mut self, bumps: &InitiateRemovalBumps) -> Result<()> {
+    pub fn initiate_removal(&mut self,seed: u64, bumps: &InitiateRemovalBumps) -> Result<()> {
         self.removal.set_inner(RoleOp {
+            seed,
             op_type: RoleOpType::RemoveMember,
             member: self.nominated_member.key(),
             upvotes: 0,

@@ -37,15 +37,15 @@ pub mod prothesis {
         ctx.accounts.exit_dao()
     }
 
-    pub fn initiate_promotion(ctx: Context<InitiatePromotion>) -> Result<()> {
-        ctx.accounts.initiate_promotion(&ctx.bumps)
+    pub fn initiate_promotion(ctx: Context<InitiatePromotion>, seed: u64) -> Result<()> {
+        ctx.accounts.initiate_promotion(seed, &ctx.bumps)
     }
 
-    pub fn initiate_demotion(ctx: Context<InitiateDemotion>) -> Result<()> {
-        ctx.accounts.initiate_demotion(&ctx.bumps)
+    pub fn initiate_demotion(ctx: Context<InitiateDemotion>, seed: u64) -> Result<()> {
+        ctx.accounts.initiate_demotion(seed, &ctx.bumps)
     }
-    pub fn initiate_removal(ctx: Context<InitiateRemoval>) -> Result<()> {
-        ctx.accounts.initiate_removal(&ctx.bumps)
+    pub fn initiate_removal(ctx: Context<InitiateRemoval>, seed: u64) -> Result<()> {
+        ctx.accounts.initiate_removal(seed, &ctx.bumps)
     }
 
     pub fn vote_on_role_op(ctx: Context<VoteOnRoleOp>, vote: u8) -> Result<()> {

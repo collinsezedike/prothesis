@@ -7,6 +7,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
+#[instruction(seed: u64)]
 pub struct InitiatePromotion<'info> {
     #[account(mut)]
     pub council_signer: Signer<'info>,
@@ -23,7 +24,7 @@ pub struct InitiatePromotion<'info> {
     #[account(
         init,
         payer = nominee,
-        seeds = [ROLE_OP_SEED, nominated_member.key().as_ref(), dao_config.key().as_ref()],
+        seeds = [ROLE_OP_SEED, seed.to_le_bytes().as_ref(), nominated_member.key().as_ref(), dao_config.key().as_ref()],
         bump,
         space = RoleOp::SPACE
     )]
@@ -46,8 +47,9 @@ pub struct InitiatePromotion<'info> {
 }
 
 impl<'info> InitiatePromotion<'info> {
-    pub fn initiate_promotion(&mut self, bumps: &InitiatePromotionBumps) -> Result<()> {
+    pub fn initiate_promotion(&mut self, seed: u64, bumps: &InitiatePromotionBumps) -> Result<()> {
         self.promotion.set_inner(RoleOp {
+            seed,
             op_type: RoleOpType::PromoteToCouncil,
             member: self.nominated_member.key(),
             upvotes: 0,

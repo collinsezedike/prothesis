@@ -19,7 +19,7 @@ pub struct ReviewRoleOp<'info> {
 
     #[account(
         mut,
-        seeds = [ROLE_OP_SEED, role_op.member.as_ref(), dao_config.key().as_ref()],
+        seeds = [ROLE_OP_SEED, role_op.seed.to_le_bytes().as_ref(), role_op.member.as_ref(), dao_config.key().as_ref()],
         bump = role_op.bump
     )]
     pub role_op: Account<'info, RoleOp>,
