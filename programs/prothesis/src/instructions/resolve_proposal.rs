@@ -2,6 +2,12 @@ use anchor_lang::{
     prelude::*,
     system_program::{transfer, Transfer},
 };
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    metadata::{create_metadata_accounts_v3, CreateMetadataAccountsV3, Metadata, MetadataAccount},
+    token::{mint_to, Mint, MintTo, Token, TokenAccount},
+};
+use mpl_token_metadata::types::DataV2;
 
 use crate::{
     constants::{DAO_CONFIG_SEED, MEMBER_SEED, PROPOSAL_SEED, TREASURY_SEED},
@@ -46,6 +52,38 @@ pub struct ResolveProposal<'info> {
     pub proposal_treasury: SystemAccount<'info>,
 
     pub system_program: Program<'info, System>,
+
+    // Optional NFT minting accounts
+    #[account(
+        init,
+        payer = resolver,
+        mint::decimals = 0,
+        mint::authority = dao_treasury.key,
+        mint::freeze_authority = dao_treasury,
+        // seeds = [proposal.title.as_bytes().as_ref(), proposal.key().as_ref()],
+        // bump,
+    )]
+    pub nft_mint: Option<Account<'info, Mint>>,
+
+    #[account(
+        init,
+        payer = resolver,
+        associated_token::mint = nft_mint,
+        associated_token::authority = dao_treasury,
+    )]
+    pub dao_token_account: Option<Account<'info, TokenAccount>>,
+
+    /// CHECK: This is the metadata account that will be created
+    #[account(mut)]
+    pub metadata_account: Option<AccountInfo<'info>>,
+
+    pub token_metadata_program: Option<Program<'info, Metadata>>,
+
+    pub token_program: Option<Program<'info, Token>>,
+
+    pub associated_token_program: Option<Program<'info, AssociatedToken>>,
+
+    pub rent: Option<Sysvar<'info, Rent>>,
 }
 
 impl<'info> ResolveProposal<'info> {
@@ -54,6 +92,7 @@ impl<'info> ResolveProposal<'info> {
             Status::Approved => {
                 self.check_signers(remaining_accounts)?;
                 self.transfer_funds()?;
+                self.mint_nft()?;
             }
             Status::Dismissed | Status::Expired => {} // Do nothing, just close the account
             Status::Pending => return Err(ProthesisError::CannotResolveBeforeReview.into()),
@@ -109,6 +148,7 @@ impl<'info> ResolveProposal<'info> {
 
         Ok(())
     }
+
     pub fn transfer_funds(&mut self) -> Result<()> {
         require!(
             self.dao_treasury.to_account_info().lamports() > self.proposal.amount_required,
@@ -138,5 +178,93 @@ impl<'info> ResolveProposal<'info> {
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, seeds);
 
         transfer(cpi_ctx, self.proposal.amount_required)
+    }
+
+    pub fn mint_nft(&self) -> Result<()> {
+        // Ensure all required accounts are present
+        let nft_mint = self
+            .nft_mint
+            .as_ref()
+            .ok_or(ProthesisError::MissingNftAccounts)?;
+        let dao_token_account = self
+            .dao_token_account
+            .as_ref()
+            .ok_or(ProthesisError::MissingNftAccounts)?;
+        let metadata_account = self
+            .metadata_account
+            .as_ref()
+            .ok_or(ProthesisError::MissingNftAccounts)?;
+        let token_metadata_program = self
+            .token_metadata_program
+            .as_ref()
+            .ok_or(ProthesisError::MissingNftAccounts)?;
+        let token_program = self
+            .token_program
+            .as_ref()
+            .ok_or(ProthesisError::MissingNftAccounts)?;
+        let _associated_token_program = self
+            .associated_token_program
+            .as_ref()
+            .ok_or(ProthesisError::MissingNftAccounts)?;
+        let rent = self
+            .rent
+            .as_ref()
+            .ok_or(ProthesisError::MissingNftAccounts)?;
+
+        // 1. Mint the NFT token
+        let dao_config = self.dao_config.key();
+        let seeds: &[&[&[u8]]] = &[&[
+            TREASURY_SEED,
+            &dao_config.as_ref(),
+            &[self.dao_config.treasury_bump],
+        ]];
+
+        let cpi_accounts = MintTo {
+            mint: nft_mint.to_account_info(),
+            to: dao_token_account.to_account_info(),
+            authority: self.dao_treasury.to_account_info(),
+        };
+
+        let cpi_ctx =
+            CpiContext::new_with_signer(token_program.to_account_info(), cpi_accounts, seeds);
+
+        mint_to(cpi_ctx, 1)?;
+
+        // 2. Create metadata for the NFT
+        let metadata_uri = format!(
+            "https://prothesis.dao/proposals/{}",
+            self.proposal.title.replace(" ", "-").to_lowercase()
+        );
+
+        let data_v2 = DataV2 {
+            name: self.proposal.title.clone(),
+            symbol: "PROTHESIS".to_string(),
+            uri: metadata_uri,
+            seller_fee_basis_points: 0,
+            creators: None,
+            collection: None,
+            uses: None,
+        };
+
+        let cpi_accounts = CreateMetadataAccountsV3 {
+            metadata: metadata_account.to_account_info(),
+            mint: nft_mint.to_account_info(),
+            mint_authority: self.dao_treasury.to_account_info(),
+            payer: self.resolver.to_account_info(),
+            update_authority: self.dao_treasury.to_account_info(),
+            system_program: self.system_program.to_account_info(),
+            rent: rent.to_account_info(),
+        };
+
+        let cpi_ctx =
+            CpiContext::new_with_signer(token_metadata_program.to_account_info(), cpi_accounts, seeds);
+
+        create_metadata_accounts_v3(
+            cpi_ctx, data_v2, true, // is_mutable
+            true, // update_authority_is_signer
+            None, // collection_details
+        )?;
+
+        Ok(())
     }
 }

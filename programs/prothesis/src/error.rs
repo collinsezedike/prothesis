@@ -58,4 +58,8 @@ pub enum ProthesisError {
     /// Not enough multisig signers provided to approve the action
     #[msg("Insufficient multisig signers to approve this action.")]
     InsufficientMultisigSigners,
+
+    /// Required NFT accounts are missing
+    #[msg("Required NFT accounts are missing")]
+    MissingNftAccounts,
 }
