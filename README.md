@@ -2,12 +2,15 @@
 
 Welcome to **Prothesis**, a phased governance DAO smart contract built on Solana using Anchor. This project implements a decentralized autonomous organization (DAO) with streamlined proposal lifecycle management, council-controlled membership, and secure multisig funding approvals.
 
+> **Note**: Experimental features are available in the [`experimental`](https://github.com/collinsezedike/prothesis/tree/experimental) branch, including NFT minting for approved proposals, lazy account initialization, and DAO configuration updates via community consensus. These features are marked as experimental because they either use experimental Anchor features or have passed initial tests but not comprehensive end-to-end testing.
+
 ---
 
 ## Table of Contents
 
 - [Overview](#overview)  
 - [Features](#features)  
+- [Experimental Features](#experimental-features)
 - [Architecture](#architecture)  
 - [Installation](#installation)  
 - [Usage](#usage)  
@@ -40,6 +43,20 @@ Membership and council privileges govern key DAO actions such as adding members,
 - **Role-based Access Control**: DAO membership, council, and aspirants have clear privileges enforced in program logic.  
 - **Consensus Thresholds**: Configurable percentage-based consensus thresholds for proposal approvals, council promotions, and multisig actions.  
 - **Robust Error Handling**: Descriptive custom errors to facilitate debugging and safe operation.
+
+---
+
+## Experimental Features
+
+The following experimental features are available in the `experimental` branch:
+
+1. **NFT Minting for Approved Proposals**: When a proposal is successfully approved and resolved, an NFT is automatically minted to commemorate the proposal. This NFT serves as a permanent record on the blockchain and can be used for historical tracking and recognition.
+
+2. **Lazy Account Initialization**: To optimize compute unit usage and reduce transaction costs, accounts are now initialized lazily (only when needed). This approach significantly reduces the computational overhead of the program.
+
+3. **DAO Configuration Updates via Consensus**: The DAO configuration can now be updated after deployment through a community consensus process, allowing for more flexible governance as the DAO evolves.
+
+> **Note**: These features are marked as experimental because they either utilize experimental features in the Anchor framework or have been developed in our program and have passed initial tests but not comprehensive end-to-end testing. Use them with caution in non-production environments.
 
 ---
 
