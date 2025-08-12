@@ -1,6 +1,20 @@
 # Prothesis DAO Smart Contract
 
+> **⚠️ EXPERIMENTAL BRANCH**: This branch contains experimental features including NFT minting for approved proposals, lazy account initialization to save compute units, and DAO configuration updates via community consensus. These features are under development and not yet recommended for production use.
+
 Welcome to **Prothesis**, a phased governance DAO smart contract built on Solana using Anchor. This project implements a decentralized autonomous organization (DAO) with streamlined proposal lifecycle management, council-controlled membership, and secure multisig funding approvals.
+
+---
+
+## Experimental Features
+
+This experimental branch includes the following enhancements:
+
+1. **NFT Minting for Approved Proposals**: When a proposal is successfully approved and resolved, an NFT is automatically minted to commemorate the proposal. This NFT serves as a permanent record on the blockchain and can be used for historical tracking and recognition.
+
+2. **Lazy Account Initialization**: To optimize compute unit usage and reduce transaction costs, accounts are now initialized lazily (only when needed). This approach significantly reduces the computational overhead of the program.
+
+3. **DAO Configuration Updates via Consensus**: The DAO configuration can now be updated after deployment through a community consensus process, allowing for more flexible governance as the DAO evolves.
 
 ---
 
